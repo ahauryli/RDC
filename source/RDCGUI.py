@@ -1,4 +1,7 @@
 #_____CHANGE LOG_____#
+    # 2019-05-08: Switched to RDC 1.1.2
+    # 2019-04-01
+        #Switched to RDC 1.1.1
     # 2018-8-24
         #Code runs from source dir when .py, but from RAMPDIR when .exe/.app
         #Switched to RDC version 0.1.1 
@@ -6,15 +9,13 @@
 from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
-from confReaderWIP import config
+from confReader import config
 import platform
 import copy
 import os
 import subprocess
 import sys
 
-
-DCWNAME = 'RDCauto0.1.2 WIP'
 if getattr(sys,'frozen',False):
     SCRIPTPATH=sys.executable
     SOURCE=os.path.dirname(SCRIPTPATH)
@@ -31,6 +32,7 @@ SETTINGS = os.path.join(RAMPDIR, 'Settings')
 TEMPLATES = os.path.join(SETTINGS, 'templates')
 OUTPUT = os.path.join(RAMPDIR,'Output')
 TEMPLPATH = os.path.join(TEMPLATES, 'template.ini')  # Get the path of template file
+
 DEFAULT = os.path.join(SETTINGS, 'DefaultsRD.ini')  # Get the path of default settings file
 DEPENDPATH = os.path.join(TEMPLATES, 'dependencies.ini')
 TOOLTIPPATH = os.path.join(TEMPLATES,'tooltips.ini')
@@ -38,7 +40,7 @@ RUNFILE = os.path.join(SETTINGS,'run.ini')
 TEMPLATE= config.importDict(TEMPLPATH)
 DEPENDENCIES = config.importDict(DEPENDPATH)
 TOOLTIPS = config.importDict(TOOLTIPPATH,delimit=False)
-
+DCWNAME = 'RDCauto1.2.0'
 for ext in ['.exe','.py']:
     if os.path.exists(os.path.join(SOURCE,(DCWNAME+ext))):
         DCWEXT=ext
@@ -46,8 +48,8 @@ for ext in ['.exe','.py']:
     else: continue
 DCW=DCWNAME+DCWEXT
 DCWPATH = os.path.join(SOURCE,DCW)
-MACRUNDCW = 'python3 '+DCWPATH
-WINRUNDCW = 'python '+DCWPATH
+MACRUNDCW = ['python3',DCWPATH]
+WINRUNDCW = ['python',DCWPATH]
 
 
 class GUI(Frame):
@@ -229,7 +231,7 @@ class GUI(Frame):
                     if platform.system() == 'Darwin':
                         os.system(MACRUNDCW)  # run the main data cleaner script
                     elif platform.system() == 'Windows':
-                        subprocess.call(DCWPATH)
+                        subprocess.call(WINRUNDCW)
                 config.write.toPath(RUNFILE,self.runDict)
                 loadPopup.destroy()
                 messagebox.showinfo('Complete', 'Data Cleaner Processing Complete')

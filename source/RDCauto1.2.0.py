@@ -88,11 +88,11 @@ import multiprocessing
 from multiprocessing import Pool,cpu_count
 
 #Importing custom libraries
-from fileObjWIP import *
-from confReaderWIP import config
-from rawFileReaderWIP import read
-from errTrackersWIP import *
-from genericHelpersWIP import *
+from fileObj import *
+from confReader import config
+from rawFileReader import read
+from errTrackers import *
+from genericHelpers import *
 
 #Version
 NAME="RAMP Data Cleaner"
