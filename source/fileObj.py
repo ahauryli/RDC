@@ -16,8 +16,8 @@ import string
 import sys
 import copy
 import shutil
-from genericHelpersWIP import *
-from rawFileReaderWIP import read
+from genericHelpers import *
+from rawFileReader import read
 
 class rampFile(object):
     def __init__(self,ramp,path):

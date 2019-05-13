@@ -16,8 +16,8 @@
 
 import datetime as dt
 import copy
-from confReaderWIP import config
-from genericHelpersWIP import *
+from confReader import config
+from genericHelpers import *
 
 class critLoader(object):
     #This object will parse bounds.ini and const.ini, pulling values from them and

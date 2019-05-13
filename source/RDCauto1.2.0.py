@@ -1,82 +1,3 @@
-#_____CHANGE LOG_____#
-    #TO BE IMPLEMENTED:
-        #-Copy printed output to a debug file
-        #-Menu for tracker selection (separate window?)
-        #-Estimated time to completion    #Needs more datar
-
-    #1.2.0
-        #rawFileReader updated for compatibility with new PPA firmware
-        #Script can now output POSIXTIME as well as DATETIME
-        #Fixed bug where last header didn't get the "_RAMPNo." suffix"
-        #Objects representing data files moved to their own .py file
-        #Error trackers relocated to their own file
-        #Helper functions moved to their own file
-        #Script now tracks separate aux,active, and net values for echem sensors
-        #bounds.ini expanded to reduce amount of hard-coded information
-            #importing routines of bounds.ini changed accordingly
-        #Trackers now run on POSIXTIME instead of DATETIME. Should improve performance
-        #ddtTracker switched to rolling averages rather than discrete
-            #Performance improved
-        #Switched worker input from list to struct for greater flexibility
-        #Parameters for error trackers now loaded once instead of every time they are initialized
-        #Fixed issue where individual PPA channels were not being flagged
-        #Changed Auto Checks to store one file per RAMP-day (similar to cal files)
-            #Removed option to process by file. All multiprocess is process by file now.
-        #Fixed bug occurring for s120 on 2018-2-23/24 (NoneType & datetime.timedelta comparison)
-        #Fixed bug causing file concatenation to crash (due to temp files being deleted)
-
-        #_____TO DO____:
-        #-Overwrite files toggle?
-        #-Processor speed input when Log Performance is turned on?
-        #-Add structure for choosing trackers
-        #-Disable unnecessary trackers for Auto Remove
-        #-Improve prediction of expected data yield?
-        #-Parallellize file searching
-        #-Revise bounds.ini file
-        #-Change multiprocessing from pool to queue?
-        #-Don't lose shit if no sensor mix entry
-        #-Bug: crashes when no ECHEM output
-
-    #0.1.1 2018-8-31
-        #BCM information can now be parsed in
-        #Reading functions are now in a separate file for better organization
-        #Criteria for NO DATA flag changed, now looks at data yield/sampling period
-        #Tracker-specific constants will now override general constants
-        #Fixed bug in flatline detection (flatlines not reported)
-        #Fixed bug in file writing (crash when parameter defined, is parsed, but not in order)
-        #.py file runs from the source folder, .exe/.app files run from working directory
-        #Modified working directory when running .app file under MacOS
-
-    #v0.1.0 2018-8-8
-        #Renamed to Data Cleaner (big change, I know)
-        #Defaults are now read from ini file, rather than hard-coded
-        #Execution parameters now stored in a self-contained class
-        #Added option to process all files stored in a given directory
-        #Code will read multiple ramp folders in the same directory
-        #Code will automatically look for SD and server files
-        #MLRs removed        #Difference between using no MLR and blank MLR
-        #Partial SD files will now be concatenated
-        #Code can handle duplicate dates across multiple ramp directories
-        #Utilizes multiple cores for faster processing
-        #Options added regarding parallel allocation and number of processes
-        #Added option to remove suspicious data
-        #Error flags added to gap reports
-        #Code can parse both old and new line formats of PPA
-        #Automatically selects correct ECHEM labels
-        #Tracks parameters that are not output to the cal file
-        #Attempt to correct bad years(e.g. 2065-3-1 to 2017-3-1)
-        #Differentiates between no sensors and no errors for sensors
-        #Tracks if sensors are disconnected/connected
-        #Option to hide ephemeral error flags
-        #Pulls formerly hard-coded constants from an ini file
-        #Optionally tracks code performance
-        #Supporting files (constants,bounds,settings, etc.) moved to subdirectories
-        #Script works independently of current working directory
-        #Choose cal file outputs in defaults or via format file
-        #Can now read plantower info from the prototype ramp
-        #Checks that sensors are pushing values 
-        #Script can be converted to application without losing functionality (as far as I know)
-
 #Importing standard libraries
 import os
 import datetime
@@ -94,11 +15,9 @@ from rawFileReader import read
 from errTrackers import *
 from genericHelpers import *
 
-#Version
 NAME="RAMP Data Cleaner"
-VERSION="0.1.2 WIP"
-REVISION="2019-01-10"
 
+#________Define folder and file names________#
 #Subfolders
 SETTINGS="Settings"
 TEMPLATES="templates"
@@ -107,6 +26,7 @@ PERFORMANCE="Performance"
 OUTPUT="Output"
 
 #File names
+VERSION="version.txt"
 TEMPLATE="template.ini"
 DEPENDENCIES="dependencies.ini"
 RUNFILE="run.ini"
@@ -115,7 +35,7 @@ CONST="const.ini"
 ECHEM="SensorMix.csv"
 PERF="Performance.csv"
 
-#Absolute Paths:
+#____Construct Paths for external files____#
 if getattr(sys,'frozen',False):
     SCRIPTPATH=sys.executable
     SCRIPTDIR=os.path.dirname(SCRIPTPATH)
@@ -126,6 +46,7 @@ else:
     WORKDIR=os.path.dirname(SCRIPTDIR)
 if WORKDIR.endswith('MacOS'):
     WORKDIR=os.path.dirname(os.path.dirname(os.path.dirname(WORKDIR)))
+VERSPATH=os.path.join(WORKDIR,VERSION)
 TEMPLPATH=os.path.join(WORKDIR,SETTINGS,TEMPLATES,TEMPLATE)
 DEPENDPATH=os.path.join(WORKDIR,SETTINGS,TEMPLATES,DEPENDENCIES)
 RUNPATH=os.path.join(WORKDIR,SETTINGS,RUNFILE)
@@ -378,7 +299,8 @@ class Struct(object): pass
 #_____________________SCRIPT MAIN AND MAIN HELPERS________________#
 
 def init():
-    print("\n%s %s (%s) now running...."%(NAME,("v."+VERSION),REVISION))
+    (version,revision,status)=getVersion()
+    print("\n%s %s %s (%s) now running...."%(NAME,("v."+version),status,revision))
     runInfo=runParams()
     runInfo.loadParams()
     files=Struct()
@@ -388,6 +310,14 @@ def init():
     print('File Search and Concatenation took:  %d seconds' %(eTime-sTime))
     wait=input("PAUSE")
     process(runInfo,files)
+
+def getVersion():
+    #Imports version information from version.txt file
+    versionFileDict=config.importDict(VERSPATH)
+    version=versionFileDict['Version']['RDCversion']
+    revision=versionFileDict['Version']['RDCrevision']
+    status=versionFileDict['Status']['RDCstatus']
+    return (version,revision,status)
 
 ##________________Searching for files__________________________##
 def listFiles(runInfo,files):
