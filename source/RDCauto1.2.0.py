@@ -349,6 +349,7 @@ def listFiles(runInfo,files):
             readFile=rawFile.get.bestFile({rawFileServ,rawFileSD},concatDir) #THERE CAN BE ONLY ONE
             if readFile!=None: 
                 addFile(files,readFile,runInfo)
+    print('%d files found #REMOVE THIS LINE B4 MOVING ON TO "PROCESS()"' %len(files.raw))
 
 def precompilePathSet(dirList):
     #outputs a set of all date files in a directory and returns it

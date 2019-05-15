@@ -5,6 +5,7 @@
         #-Fix mixed list bug:  e.g. 2018-2-20/2018-2-22, 2018-2-24/2018-2-25
         #-Pre-fill Output fields
         #-Fix callback when saving empty window
+        #Fixed bug where passing lists of strings to ramp2MixedList caused a crash
     #2018-12-21
         #Fixed bug where '.TXT' files were not recognized as '.txt'
     #2018-8-24
@@ -1032,8 +1033,9 @@ class config(object):
             return newTogDict
 
         @staticmethod
-        def ramp2MixedList(rampList):
+        def ramp2MixedList(rampListIn):
             #Compresses a numerical list into a mixed list
+            rampList=copy.copy(rampListIn)
             keywords={"all"}
             try:
                 if rampList in keywords: return rampList
@@ -1042,6 +1044,7 @@ class config(object):
             if len(rampList)<=2: #i.e. if the list cannot be compressed (need min. 3 elem) 
                 return config.write.stringify(rampList)
             else:
+                rampList=[int(rampNum) for rampNum in rampList] #Convert strList to numList if needed
                 rampList=sorted(rampList)
                 (i0,i1)=(0,0)
                 subRange=list()
