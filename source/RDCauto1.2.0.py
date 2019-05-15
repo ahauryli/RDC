@@ -26,7 +26,7 @@ PERFORMANCE="Performance"
 OUTPUT="Output"
 
 #File names
-VERSION="version.txt"
+VERSION="version.ini"
 TEMPLATE="template.ini"
 DEPENDENCIES="dependencies.ini"
 RUNFILE="run.ini"

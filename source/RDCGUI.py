@@ -1,11 +1,3 @@
-#_____CHANGE LOG_____#
-    # 2019-05-08: Switched to RDC 1.1.2
-    # 2019-04-01
-        #Switched to RDC 1.1.1
-    # 2018-8-24
-        #Code runs from source dir when .py, but from RAMPDIR when .exe/.app
-        #Switched to RDC version 0.1.1 
-
 from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
@@ -25,6 +17,7 @@ def getRunFileName(path):
     output=fileName+version
     return output
 
+#___Global declarations__#
 if getattr(sys,'frozen',False):
     SCRIPTPATH=sys.executable
     SOURCE=os.path.dirname(SCRIPTPATH)

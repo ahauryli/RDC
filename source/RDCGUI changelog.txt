@@ -1,0 +1,9 @@
+2019-05-15
+    RDCGUI now pulls version and file name information from version.ini. Should eliminate need of editing the script with every new RDC version
+2019-05-08
+    Switched to RDC 1.1.2
+2019-04-01
+    Switched to RDC 1.1.1
+2018-8-24
+    Code runs from source dir when .py, but from RAMPDIR when .exe/.app
+    Switched to RDC version 0.1.1 

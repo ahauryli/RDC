@@ -1039,7 +1039,7 @@ class config(object):
                 if rampList in keywords: return rampList
             except: pass
             newList=list()
-            if len(rampList)<=1: 
+            if len(rampList)<=2: #i.e. if the list cannot be compressed (need min. 3 elem) 
                 return config.write.stringify(rampList)
             else:
                 rampList=sorted(rampList)
@@ -1069,7 +1069,8 @@ class config(object):
             except: pass
             delta=datetime.timedelta(days=1)
             newList=list()
-            if len(dateList)<=1: return config.write.stringify(dateList)
+            if len(dateList)<=2: return config.write.stringify(dateList)
+            #return the list if incompressible (need min. 3 elem) 
             else:
                 dateList=sorted(dateList)
                 (i0,i1)=(0,0)
