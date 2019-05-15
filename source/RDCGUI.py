@@ -16,6 +16,15 @@ import os
 import subprocess
 import sys
 
+#___Forward declare functions needed by global vars:____#
+def getRunFileName(path): 
+    #parses an ini format file to get file name of the RDC program
+    versionDict=config.importDict(path)
+    fileName=versionDict['Version']['RDCname']
+    version=versionDict['Version']['RDCversion']
+    output=fileName+version
+    return output
+
 if getattr(sys,'frozen',False):
     SCRIPTPATH=sys.executable
     SOURCE=os.path.dirname(SCRIPTPATH)
@@ -32,7 +41,7 @@ SETTINGS = os.path.join(RAMPDIR, 'Settings')
 TEMPLATES = os.path.join(SETTINGS, 'templates')
 OUTPUT = os.path.join(RAMPDIR,'Output')
 TEMPLPATH = os.path.join(TEMPLATES, 'template.ini')  # Get the path of template file
-
+VERSPATH = os.path.join(RAMPDIR,'version.ini') 
 DEFAULT = os.path.join(SETTINGS, 'DefaultsRD.ini')  # Get the path of default settings file
 DEPENDPATH = os.path.join(TEMPLATES, 'dependencies.ini')
 TOOLTIPPATH = os.path.join(TEMPLATES,'tooltips.ini')
@@ -40,7 +49,7 @@ RUNFILE = os.path.join(SETTINGS,'run.ini')
 TEMPLATE= config.importDict(TEMPLPATH)
 DEPENDENCIES = config.importDict(DEPENDPATH)
 TOOLTIPS = config.importDict(TOOLTIPPATH,delimit=False)
-DCWNAME = 'RDCauto1.2.0'
+DCWNAME = getRunFileName(VERSPATH)
 for ext in ['.exe','.py']:
     if os.path.exists(os.path.join(SOURCE,(DCWNAME+ext))):
         DCWEXT=ext
@@ -480,6 +489,8 @@ class ToolTip(object):
         self.tw = None
         if tw:
             tw.destroy()
+
+#___Helper Functions___#
 
 
 if __name__ == '__main__':
