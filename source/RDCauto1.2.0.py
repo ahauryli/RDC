@@ -371,7 +371,7 @@ def addFile(files,readFile,runInfo):
     ramp=readFile.ramp
     date=readFile.date
     writeFile=calFile.create(readFile,runInfo)
-    chkFile=errorFile.create(readFile,runInfo)
+    if runInfo.get("Auto Checks"): chkFile=errorFile.create(readFile,runInfo)
     if ramp in files.raw:
         files.raw[ramp].append(readFile)
         files.cal[ramp].append(writeFile)

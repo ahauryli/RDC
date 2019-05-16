@@ -36,6 +36,7 @@
         #-Change multiprocessing from pool to queue?
         #-Don't lose shit if no sensor mix entry
         #-Bug: crashes when no ECHEM output
+        #-Fix bug that causes crash when auto checks are disabled
 
     #0.1.1 2018-8-31
         #BCM information can now be parsed in
