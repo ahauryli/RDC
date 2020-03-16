@@ -29,7 +29,7 @@ OUTPUT="Output"
 VERSION="version.ini"
 TEMPLATE="template.ini"
 DEPENDENCIES="dependencies.ini"
-RUNFILE="ConcatPartial20200310.ini"
+RUNFILE="ConcatPartialHome20200310.ini"
 CRITERIA="bounds.ini"
 CONST="const.ini"
 ECHEM="SensorMix.csv"
@@ -308,7 +308,6 @@ def init():
     listFiles(runInfo,files)
     eTime=time.time()
     print('File Search and Concatenation took:  %d seconds' %(eTime-sTime))
-    wait=input("PAUSE")
     process(runInfo,files)
 
 def getVersion():
@@ -328,8 +327,7 @@ def listFiles(runInfo,files):
     if runInfo.get("Auto Checks"): files.err=dict()
     concatFilesDir=runInfo.get("Concatenated Files Directory")
     #Creates error file list, if the option is enabled
-    if runInfo.get("Print Output"): print("Files Found:")
-    else: print("Locating files...")
+    print("Locating files...")
     for rampNum in runInfo.rampDict: #Go ramp by ramp through the ramp selection
         ramp=runInfo.rampDict[rampNum]
         concatDir=os.path.join(concatFilesDir,"s%s" %str(rampNum))
@@ -349,7 +347,8 @@ def listFiles(runInfo,files):
             readFile=rawFile.get.bestFile({rawFileServ,rawFileSD},concatDir) #THERE CAN BE ONLY ONE
             if readFile!=None: 
                 addFile(files,readFile,runInfo)
-    print('%d files found #REMOVE THIS LINE B4 MOVING ON TO "PROCESS()"' %len(files.raw))
+            elif runInfo.get("Print Output"):
+                print("RAMP %d: No useable files found" %rampNum)
 
 def precompilePathSet(dirList):
     #outputs a set of all date files in a directory and returns it
@@ -387,6 +386,15 @@ def addFile(files,readFile,runInfo):
 def process(runInfo,files):
     #Wrapper for initializing processing routines
     (lenFiles,sFiles)=getRawLen(files.raw) #Get the number and total size of query
+
+    if lenFiles==0:
+        print("No useable RAMP files found. Please check that:\
+        \n1. The raw directory address is correct\
+        \n2. The raw directory is populated\
+        \n3. RAMP files in the raw directory are not corrupted\
+        \n4. RAMP files have useable timestamps (e.g. not 21/75/128 00:153:27)")
+        return
+
     sFiles=sFiles/(1024**2) #Change size from bytes to Mb
     rTime=getEstRunTime(lenFiles,runInfo)/60.0 #Compute a runtime estimate
 

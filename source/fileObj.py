@@ -235,6 +235,11 @@ class rawFile(dataFile):
                 else: fOut=f2
             elif f2.start and f2.end: fOut=f2 #IF start and end stamps are defined only for f2, use f2
             elif f1.start and f1.end: fOut=f1   
+            else: 
+                f1.close()#Close all files that may have been open
+                f2.close()
+                return None #If no valid date stamps found, skip rest
+
             f1.close()#Close all files that may have been open
             f2.close()
             if fOut==f3:
