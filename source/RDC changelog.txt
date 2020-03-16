@@ -23,10 +23,10 @@
             #Removed option to process by file. All multiprocess is process by file now.
         #Fixed bug occurring for s120 on 2018-2-23/24 (NoneType & datetime.timedelta comparison)
         #Fixed bug causing file concatenation to crash (due to temp files being deleted)
+	#Fixed crash-causing bug caused by concatenating partial files without valid time stamps
 
         #_____TO DO____:
         #-Overwrite files toggle?
-        #-Fix bug where concatenated files are deleted before they are read
         #-Processor speed input when Log Performance is turned on?
         #-Add structure for choosing trackers
         #-Disable unnecessary trackers for Auto Remove
