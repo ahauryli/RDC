@@ -2,6 +2,7 @@
         #-Copy printed output to a debug file
         #-Menu for tracker selection (separate window?)
         #-Estimated time to completion    #Needs more datar
+	#-Add compatibility with new RAMPs
 
     #1.2.0
         #rawFileReader updated for compatibility with new PPA firmware
@@ -37,6 +38,7 @@
         #-Don't lose shit if no sensor mix entry
         #-Bug: crashes when no ECHEM output
         #-Fix bug that causes crash when auto checks are disabled
+	#-Bug: No valid files found if S177 instead of s177
 
     #0.1.1 2018-8-31
         #BCM information can now be parsed in
