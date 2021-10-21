@@ -17,25 +17,181 @@
 import string
 import datetime
 
+
+
 class read(object):
     def __init__(self): pass
 
-    @staticmethod
-    def options():
-        opt={
-            "DATE"  : read.timeStamp,
-            "ECHEM" : read.echem.line,
-            "CO2"   : read.co2,
-            "BATT"  : read.batt.line,
-            "MET"   : read.met,
-            "TSI"   : read.tsi,
-            "ADI"   : read.adi,
-            "PPA"   : read.ppa.line,
-            "PTR"   : read.ptr,
-            "STAT"  : read.stat,
-            "BCM"   : read.bcm
+    class v8(object):
+        def __init__(self): pass
+
+        @staticmethod 
+        def options():
+            opt={
+                "DATE"  : read.timeStamp,
+                "ECHEM" : read.echem.line,
+                "CO2"   : read.co2,
+                "BATT"  : read.batt.line,
+                "MET"   : read.met,
+                "TSI"   : read.tsi,
+                "ADI"   : read.adi,
+                "PPA"   : read.ppa.line,
+                "PTR"   : read.v8.ptr,
+                "STAT"  : read.v8.stat,
+                "BCM"   : read.bcm
             }
-        return opt
+            return opt
+
+        @staticmethod
+        def ptr(s):
+            out={
+                "PTR010"    : (float,1,None),
+                "PTR010A"   : (float,2,None),
+                "PTR025"    : (float,3,None),
+                "PTR025A"   : (float,4,None),
+                "PTR100"    : (float,5,None),
+                "PTR100A"   : (float,6,None)
+                }
+            try: return read.vals(s,out,7)
+            except: return None
+
+        @staticmethod
+        def stat(s):
+            outOld={
+                "recharge"  : (int,1,None),
+                "signal"    : (int,2,None),
+                #"ratio"     : (int,3,None),
+                #"interval"  : (int,4,None),
+                #"pump"      : (int,5,None),
+                #"ADC"       : (int,6,None),
+                "SDstat"    : (str,7,None),
+                #"AUXstat"   : (int,8,None)
+                }
+            outNew= {
+                    "recharge"  : (int,1,None),
+                    "signal"    : (int,2,None),
+                    #"ratio"     : (int,3,None),
+                    #"interval"  : (int,4,None),
+                    #"filter"    : (int,5,None),
+                    #"pump"      : (int,6,None),
+                    #"ADC"       : (int,7,None),
+                    "SDstat"    : (str,8,None),
+                    #"AUXstat"   : (int,9,None)
+                    }
+            try: return read.vals(s,outNew)
+            except:
+                try: return read.vals(s,outOld)
+                except: return None
+
+    class v9(object):
+        def __init__(self): pass
+
+        @staticmethod
+        def expectedLengths():
+        #Functions which returns how many values are expected
+        #After each header in the map below:
+            opt={
+                "RAW"   : 8,
+                "STAT"  : 3,
+                "MET"   : 2,
+                "TSI"   : 21,
+                "ADI"   : 9
+                }
+
+            return opt
+
+        @staticmethod
+        def options():
+            #Maps the headers below to functions which read substrings
+            # with those headers
+            opt={
+                "DATE"  : read.timeStamp,
+
+                "RAW"   : read.echem.line,
+                "CO"    : read.echem.cal,
+                "NO2"   : read.echem.cal,
+                "SO2"   : read.echem.cal,
+                "NO"    : read.echem.cal,
+                "O3"    : read.echem.cal,
+                "VOC"   : read.echem.cal,
+
+                "CO2"   : read.singleVal,
+                "T"     : read.singleVal,
+                "RH"    : read.singleVal,
+
+                "BATT"  : read.singleVal,
+                "CHRG"  : read.singleVal,
+                "RUN"   : read.singleVal,
+
+                "PM1.0" : read.v9.ptr,
+                "PM2.5" : read.v9.ptr,
+                "PM10"  : read.v9.ptr,
+
+                "PM1.0_2": read.v9.ptr,
+                "PM2.5_2": read.v9.ptr,
+                "PM10_2" : read.v9.ptr,
+
+                "WD"    : read.singleVal,
+                "WS"    : read.singleVal,
+
+                "MET"   : read.met,
+                "TSI"   : read.tsi,
+                "ADI"   : read.adi,
+                "PPA"   : read.ppa.line,
+                "STAT"  : read.v9.stat,
+                "BCM"   : read.bcm
+                }
+            return opt
+
+        @staticmethod
+        def ptr(s):
+            headerChange=   {
+                            "PM1.0" : "PTR010A",
+                            "PM2.5" : "PTR025A",
+                            "PM10"  : "PTR100A",
+
+                            "PM1.0_2" : "PTR010B",
+                            "PM2.5_2" : "PTR025B",
+                            "PM10_2"  : "PTR100B"
+                            }
+            try: 
+                #sTemp=s.split(',')
+                header=s[0]
+                header=headerChange[header] #Change header as seen in map above
+                out={header : (float,1,None)}
+                try: return read.vals(s,out,2)
+                except: return out #Return empty dictionary if could not be parsed but connected
+            except: return None
+
+        @staticmethod
+        def stat(s):
+            endChar='Z' #Character appended to end of every data line
+            binForm="08b" #Format integer as 8-bit binary number
+            endVal=s[len(s)-1]
+            if endVal.endswith(endChar):
+                s[len(s)-1]=endVal[0:-1] #Chop off end character if just denoting end of line
+            statDict={
+                "HEX1"  : (partial(int,base=16),1,None),
+                "HEX2"  : (partial(int,base=16),2,None),
+                #"HEX3"  : (partial(int,base=16),3,None), #Port status. Not needed at the moment
+                    }
+            hexVals=read.vals(s,statDict)
+            #Convert hexadecimal to binary in statDict:
+            for header in statDict:
+                val=statDict[header]
+                if type(val)==int:
+                    statDict[header]=format(val,binForm) #Convert to binary string
+                    statDict[header]=statDict[header][::-1] #Reverse binary string so that slicing can be used
+            outDict={
+                    "SD"    :None,
+                    "ECREAD":None,
+                    }
+            (h1,h2)=(statDict["HEX1"],statDict["HEX2"])
+            if h1:
+                outDict["SD"]=statDict["HEX1"][0:3]
+            if h2:
+                outDict["ECREAD"]=statDict["HEX2"][0:4]
+            return outDict
 
     @staticmethod
     def timeStamp(s,fileDate=None):
@@ -96,6 +252,16 @@ class read(object):
             return outDict
         except: return outDict #Return dictionary with "Nones" if unsuccessful
 
+    @staticmethod
+    def singleVal(s):
+        try:
+            #sTemp=s.split(',')
+            header=s[0]
+            out={header : (float,1,None)}
+            try: return read.vals(s,out,2)
+            except: return out #Return empty dictionary if could not be parsed but connected
+        except: return None
+
     class echem:
         @staticmethod
         def line(s):
@@ -145,6 +311,32 @@ class read(object):
                     "S4ACT" :   None,
                     "S4NET" :   None,
                     }
+
+        @staticmethod
+        def cal(s):
+            try:
+                #sTemp=s.split(',')
+                gasID=s[0] #The header is the gas name
+                calSuf="CAL" #Suffix added to 'calibrated' gas headers
+                gasCalName=read.echem.place(gasID,calSuf)
+                out={gasCalName : (float,1,None)}
+                try: return read.vals(s,out,2)
+                except: return out #Return empty dictionary if could not be parsed but connected
+            except: return None
+
+        @staticmethod
+        def place(gas,readType):
+            #Takes a gas name & reading type, retrns the the place number
+            #e.g. echemPlace("CO","CAL") -> "S1CAL"
+            place={
+                "CO"    : "S1",
+                "SO2"   : "S2",
+                "NO"    : "S2",
+                "NO2"   : "S3",
+                "O3"    : "S4",
+                "VOC"   : "S4"
+                }
+            return place[gas]+readType
 
     class batt(object):
         @staticmethod
@@ -482,19 +674,6 @@ class read(object):
             return round((F-32)*5/9,1)
 
     @staticmethod
-    def ptr(s):
-        out={
-            "PTR010"    : (float,1,None),
-            "PTR010A"   : (float,2,None),
-            "PTR025"    : (float,3,None),
-            "PTR025A"   : (float,4,None),
-            "PTR100"    : (float,5,None),
-            "PTR100A"   : (float,6,None)
-            }
-        try: return read.vals(s,out,7)
-        except: return None
-
-    @staticmethod
     def tsi(s):
         out={
             "CPCFLAG"   : (str,4,None),
@@ -546,35 +725,6 @@ class read(object):
         }
         try: return read.vals(s,out)
         except: return None
-
-    @staticmethod
-    def stat(s):
-
-        outOld={
-            "recharge"  : (int,1,None),
-            "signal"    : (int,2,None),
-            #"ratio"     : (int,3,None),
-            #"interval"  : (int,4,None),
-            #"pump"      : (int,5,None),
-            #"ADC"       : (int,6,None),
-            "SDstat"    : (str,7,None),
-            #"AUXstat"   : (int,8,None)
-            }
-        outNew= {
-                "recharge"  : (int,1,None),
-                "signal"    : (int,2,None),
-                #"ratio"     : (int,3,None),
-                #"interval"  : (int,4,None),
-                #"filter"    : (int,5,None),
-                #"pump"      : (int,6,None),
-                #"ADC"       : (int,7,None),
-                "SDstat"    : (str,8,None),
-                #"AUXstat"   : (int,9,None)
-                }
-        try: return read.vals(s,outNew)
-        except:
-            try: return read.vals(s,outOld)
-            except: return None
 
     @staticmethod
     def vals(s,param,l=None,dlm=","):

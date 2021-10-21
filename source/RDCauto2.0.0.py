@@ -514,17 +514,12 @@ def readWrite(runInfo,raw,cal,crit,chk=None):
 
     #Check if line has v9.xx firmware. If so, don't bother checking subsequently
     #Otherwise, check every line
-    isV9=parse.check.ifV9(line)
+    isV9=parse.v9.check(line)
 
     while line!="":
         #Performs firmware checks only until v.9.xx firmware is detected
-        if isV9: pDict=parse.v9(line,cal,tracker) #Turns raw string into value dictionary
-        else: 
-            (pDict,isV9)=parse.blind(line,cal,tracker) 
-        
-        wLine=config4Writing(pDict,cal) #Rewrites dictionary as an output string
-        if wLine!=None: cal.write(wLine)  #If valid string, write to processed file
-        #elif tracker: tracker.badLine(line)
+        if isV9: parse.v9.chunk(line,cal,tracker) #Parses raw string, does write and tracker push operations
+        else: isV9=parse.blind(line,cal,tracker) 
         line=raw.readline() #Continue reading lines
     if printOut: print("Processed and published to:\n%s" %str(cal)) 
     #Lets the user know that a file has been processed successfully if option is enabled
@@ -542,44 +537,19 @@ class parse(object): #Collection of methods used to parse a line of data
         if neither, returns an empty dictionary
         Short circuited to prioritize V9 line detection
         """
-        if parse.check.ifV9(line):
-            return (parse.v9(line,cal,tracker),True)
-        elif parse.check.ifV8(line):
-            return (parse.v8(line,cal,tracker),False)
-        else: return (dict(),False)
+        if parse.v9.check(line):
+            parse.v9.chunk(line,cal,tracker)
+            return True
+        elif parse.v8.check(line):
+            parse.v8.chunk(line,cal,tracker)
+            return False
+        else: return False
 
-    @staticmethod
-    def v8(line,cal,tracker=None): #Processes the data for older firmware (v.8.13 - 8.44)
-        parsedDict=dict()
-        dtStr='DATE'
-        line=line.split("X")
-        for i in range(len(line)):
-            elem=line[i]
-            if elem.startswith(dtStr):
-                dateReader=read.options()[dtStr]
-                dateTime=dateReader(elem,cal.date)
-                if tracker!=None: dateTime=tracker.push(dtStr,dateTime)
-                if dateTime!=None: 
-                    parsedDict[dtStr]=dateTime
-                    line.pop(i) #Remove the datettime element from list so as not to double-read
-                    break #Stop the loop once a valid datetime has been found
-                #If a valid datetime has not been found, check the rest of the line
-        try: #If date could not be established, do not read or track line
-            if dateTime==None: return None
-        except: return None
-        for elem in line:
-            (eType,eParsed)=inspectElem(elem,tracker)
-            if eParsed: parsedDict[eType]=eParsed
-        return parsedDict
+    class v8(object):
+        def __init__(self): pass
 
-    @staticmethod
-    def v9(line,cal,tracker=None): #Processes data for new firmware (v.9.13 and up)
-        pass
-
-
-    class check (object): #Methods & Heuristics for figuring out the RAMP firmware from a line of data
         @staticmethod
-        def ifV8(line): #Check if line is consistent with v.8.13 - 8.44 RAMP firmware
+        def check(line): #Check if line is consistent with v.8.13 - 8.44 RAMP firmware
             #Determine whether the line is at least a 5-element "X"-delimited list
             minLength=5
             lineList=line.split("X")
@@ -592,7 +562,56 @@ class parse(object): #Collection of methods used to parse a line of data
             return True
 
         @staticmethod
-        def ifV9(line):  #Check if line is consistent with v.9.13+ RAMP firmware
+        def chunk(line,cal,tracker=None): #Wrapper for parse.v8.line(), additionally handles reading/writing
+            pDict=parse.v8.line(line,cal,tracker)
+            wLine=config4Writing(pDict,cal) #Rewrites dictionary as an output string
+            if wLine!=None: cal.write(wLine)  #If valid string, write to processed file
+
+
+        @staticmethod
+        def line(line,cal,tracker=None): #Processes the data for older firmware (v.8.13 - 8.44)
+            parsedDict=dict()
+            dtStr='DATE'
+            line=line.split("X")
+            for i in range(len(line)):
+                elem=line[i]
+                if elem.startswith(dtStr):
+                    dateReader=read.v8.options()[dtStr] #Pull the datetime reader function
+                    dateTime=dateReader(elem,cal.date)
+                    if tracker!=None: dateTime=tracker.push(dtStr,dateTime)
+                    if dateTime!=None: 
+                        parsedDict[dtStr]=dateTime
+                        line.pop(i) #Remove the datettime element from list so as not to double-read
+                        break #Stop the loop once a valid datetime has been found
+                    #If a valid datetime has not been found, check the rest of the line
+            try: #If date could not be established, do not read or track line
+                if dateTime==None: return None
+            except: return None
+            for elem in line:
+                (eType,eParsed)=parse.v8.element(elem,tracker)
+                if eParsed: parsedDict[eType]=eParsed
+            return parsedDict
+
+        @staticmethod
+        def element(elem,tracker): #Determines which parsing function to use and applies it
+            #Pushes the read values to a tracker and returns them if valid
+            pDict=read.v8.options() #Map of parameter name to read method
+            for key in pDict.keys(): #Check which element the parser is dealing with
+                if elem.startswith(key):
+                    readings=pDict[key](elem) #Applies the appropriate reading function
+                    if tracker: readings=tracker.push(key,readings) #Passes the values to a tracker
+                    if readings: return (key,readings) #Returns readings if valid
+                    else: return (None,None) #Otherwise returns nothing
+                elif tracker!=None and elem.startswith("CON"): #Checks for XCONNECT flags
+                    tracker.push("STAT","XCON")
+                    return(None,None)
+            return (None,None)
+
+    class v9(object):
+        def __init__(self): pass
+
+        @staticmethod
+        def check(line):  #Check if line is consistent with v.9.13+ RAMP firmware
             #Look for keywords
             keyTerms={'DATE','RAW','T','RH','CHRG','RUN'}
             for key in keyTerms:
@@ -602,21 +621,83 @@ class parse(object): #Collection of methods used to parse a line of data
             for key in antiKey:
                 if line.find(key)!=-1: return False
             #If all the keywords are present, attempt to process
-            return True           
+            return True 
 
+        @staticmethod
+        def chunk(text,cal,tracker=None): #Wrapper, handles line splitting
+            dataHeader="DATE"
+            isolatedLines=text.split(dataHeader) #Try to break up multiple data points between line breaks
+            if len(isolatedLines)>1: #Only try to parse if a "DATE" header was found
+                for singleLine in isolatedLines[1:]:
+                #Go thru points one-by-one (fist element definitely not a data pt, no "DATE" header)
+                    pDict=parse.v9.line(singleLine,cal,tracker)
+                    wLine=config4Writing(pDict,cal) #Rewrites dictionary as an output string
+                    if wLine!=None: cal.write(wLine)
 
-def inspectElem(elem,tracker):
-    pDict=read.options() #Map of parameter name to read method
-    for key in pDict.keys():
-        if elem.startswith(key):
-            readings=pDict[key](elem)
-            if tracker: readings=tracker.push(key,readings)
-            if readings: return (key,readings)
-            else: return (None,None)
-        elif tracker!=None and elem.startswith("CON"): 
-            tracker.push("STAT","XCON")
-            return(None,None)
-    return (None,None)
+        @staticmethod
+        def line(line,cal,tracker=None): #Processes data for new firmware (v.9.13 and up)
+            #Takes a 'decapitated' line, i.e. ",mm/dd/yy,..." to parse
+            #parsedDict=copy.deepcopy(cal.parsedBlankDict) #Map to store parsed values
+            parsedDict=dict()
+
+            lineList=line.split(",") #Values are comma-delimite
+            #The date header should now be the first element in the list, and the date the second:
+
+            if len(lineList)>2: #i.e. if there is more than just a time stamp in the line
+                #pass2Parser=','.join(['DATE',lineList[1]]) #Second element assumed to be the date
+                dateTime=read.timeStamp(lineList[1],cal.date)
+                if tracker:  dateTime=tracker.push('DATE',dateTime)
+                if dateTime!=None: 
+                    parsedDict['DATE']=dateTime #Add to output if time stamp is valid
+            readingsID=2 #Third list element onward assumed to be the start of readings (after time stamp)
+            return parse.v9.substrings(parsedDict,lineList[readingsID:],cal.catNameDict,tracker) #Get value map
+
+        @staticmethod
+        def substrings(parsedDict,line,rParamDict,tracker=None):
+            #Parse the data string after the time stamp
+            tempDict=dict()
+            pDict=read.v9.options() #Get map of readable headers
+            eLenDict=read.expectedLengths() #Get map of readable headers:expected number of outputs
+            readableSet=pDict.keys()
+            i=0 #Start immediately after the time stamp
+            #Run thru line and attempt to parse out elements
+            while i<(len(line)-1):
+                elem=line[i]
+                if elem in readableSet: #if header is known by the reader, attempt to parse
+                    #If header is in the map of expected lengths, reterieve that value:
+                    if elem in eLenDict: expLen=eLenDict[elem]
+                    else: #Otherwise, assume there is only one
+                        expLen=1
+
+                    expDatLst=line[i:i+expLen+1] #Isolate data thought to be pertinent to the header
+                    multiHeader=len(readableSet & set(expDatLst))>1 
+                    if multiHeader:#i.e. if more than one header in isolated list
+                        i+=1
+                        continue
+                    else:#Otherwise, try to parse
+                        #pass2Parser=','.join(expDatLst) #prepare string to be parsed
+                        readings=pDict[elem](expDatLst) #Get output
+                        if readings==None:
+                            #Continue to next parameter if could not be parsed
+                            i+=1
+                            continue
+                        #Use a random header for current element as determinant for category
+                        #(all headers in 'readings' should be in the same category)
+                        randHeader=next(iter(readings.keys())) #Random header from output
+                        catName=rParamDict[randHeader]
+                        if catName in tempDict:
+                            tempDict[catName].update(readings)
+                        else:
+                            tempDict[catName]=readings
+                        i+=expLen+1
+                else: i+=1
+            #Run all parsed readings through the tracker (so that all readings are there)
+            if tracker:
+                for cat in tempDict:
+                    try:
+                        parsedDict[cat]=tracker.push(cat,tempDict[cat])
+                    except: raise RuntimeError(cat,tempDict[cat])
+            return parsedDict
 
 def config4Writing(pDict,cal):
     if pDict==None: return None #If whole line couldn't be read (e.g. bad date stamp)
