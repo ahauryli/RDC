@@ -511,8 +511,17 @@ def readWrite(runInfo,raw,cal,crit,chk=None):
     else: tracker=None
 
     line=raw.readline() #Get first line of raw file
+
+    #Check if line has v9.xx firmware. If so, don't bother checking subsequently
+    #Otherwise, check every line
+    isV9=parse.check.ifV9(line)
+
     while line!="":
-        pDict=parse.dataLine(line,cal,tracker) #Turns raw string into value dictionary
+        #Performs firmware checks only until v.9.xx firmware is detected
+        if isV9: pDict=parse.v9(line,cal,tracker) #Turns raw string into value dictionary
+        else: 
+            (pDict,isV9)=parse.blind(line,cal,tracker) 
+        
         wLine=config4Writing(pDict,cal) #Rewrites dictionary as an output string
         if wLine!=None: cal.write(wLine)  #If valid string, write to processed file
         #elif tracker: tracker.badLine(line)
@@ -527,18 +536,17 @@ def readWrite(runInfo,raw,cal,crit,chk=None):
 
 class parse(object): #Collection of methods used to parse a line of data
     @staticmethod
-    def dataLine(line,cal,tracker=None): #Wrapper, called on a line of data
+    def blind(line,cal,tracker=None): 
         """Checks if a line is likely from v8.xx firmware or v9.xx firmware
-        if either, calls the appropriate parsing function
+        if either, calls the appropriate parsing function and returns if the firmware is v9.xx
         if neither, returns an empty dictionary
+        Short circuited to prioritize V9 line detection
         """
-        isV8=parse.check.ifV8(line)
-        isV9=parse.check.ifV9(line)
-        if isV9:
-            return parse.v9
-        elif isV8:
-            return parse.v8
-        else: return dict()
+        if parse.check.ifV9(line):
+            return (parse.v9(line,cal,tracker),True)
+        elif parse.check.ifV8(line):
+            return (parse.v8(line,cal,tracker),False)
+        else: return (dict(),False)
 
     @staticmethod
     def v8(line,cal,tracker=None): #Processes the data for older firmware (v.8.13 - 8.44)
@@ -820,3 +828,30 @@ def closerDate(dates,lastDate,tgt):
 # if __name__ == '__main__':
 #     multiprocessing.freeze_support() #Enables conversion to executable
 #     init()
+
+##_________HERE BE THE DRAGONS (TEST CODE)_________##
+
+# def speedTest():
+#     path='E:/RAMPS/Test/New RAMPs'
+#     sTime=time.time()
+#     totalFiles=0
+#     for i in range(10):
+#         Rfolds=os.listdir(path)
+#         for d in Rfolds:
+#             subFolder=os.path.join(path,d)
+#             files=os.listdir(subFolder)
+#             totalFiles+=len(files)
+#             for file in files:
+#                 cPath=os.path.join(path,d,file)
+#                 io=open(cPath,'r')
+#                 line=io.readline()
+#                 while line!="":
+#                     isV8=parse.check.ifV8(line)
+#                     isV9=parse.check.ifV9(line)
+#                     line=io.readline()
+
+#     eTime=time.time()
+#     tTime=eTime-sTime
+#     print(totalFiles)
+#     print(tTime)
+#     print(tTime/totalFiles)
