@@ -697,7 +697,9 @@ class parse(object): #Collection of methods used to parse a line of data
                     try:
                         parsedDict[cat]=tracker.push(cat,tempDict[cat])
                     except: raise RuntimeError(cat,tempDict[cat])
-            return parsedDict
+                return parsedDict
+            else:
+                return tempDict
 
 def config4Writing(pDict,cal):
     if pDict==None: return None #If whole line couldn't be read (e.g. bad date stamp)
