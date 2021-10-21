@@ -512,7 +512,7 @@ def readWrite(runInfo,raw,cal,crit,chk=None):
 
     line=raw.readline() #Get first line of raw file
     while line!="":
-        pDict=parseLine(line,cal,tracker) #Turns raw string into value dictionary
+        pDict=parse.dataLine(line,cal,tracker) #Turns raw string into value dictionary
         wLine=config4Writing(pDict,cal) #Rewrites dictionary as an output string
         if wLine!=None: cal.write(wLine)  #If valid string, write to processed file
         #elif tracker: tracker.badLine(line)
@@ -525,28 +525,77 @@ def readWrite(runInfo,raw,cal,crit,chk=None):
         #let user know that error reports were written successfully (if enabled)
     if printOut: print('\n') #Blank line between reports of processing completion
 
-def parseLine(line,cal,tracker=None): 
-    parsedDict=dict()
-    dtStr='DATE'
-    line=line.split("X")
-    for i in range(len(line)):
-        elem=line[i]
-        if elem.startswith(dtStr):
-            dateReader=read.options()[dtStr]
-            dateTime=dateReader(elem,cal.date)
-            if tracker!=None: dateTime=tracker.push(dtStr,dateTime)
-            if dateTime!=None: 
-                parsedDict[dtStr]=dateTime
-                line.pop(i) #Remove the datettime element from list so as not to double-read
-                break #Stop the loop once a valid datetime has been found
-            #If a valid datetime has not been found, check the rest of the line
-    try: #If date could not be established, do not read or track line
-        if dateTime==None: return None
-    except: return None
-    for elem in line:
-        (eType,eParsed)=inspectElem(elem,tracker)
-        if eParsed: parsedDict[eType]=eParsed
-    return parsedDict
+class parse(object): #Collection of methods used to parse a line of data
+    @staticmethod
+    def dataLine(line,cal,tracker=None): #Wrapper, called on a line of data
+        """Checks if a line is likely from v8.xx firmware or v9.xx firmware
+        if either, calls the appropriate parsing function
+        if neither, returns an empty dictionary
+        """
+        isV8=parse.check.ifV8(line)
+        isV9=parse.check.ifV9(line)
+        if isV9:
+            return parse.v9
+        elif isV8:
+            return parse.v8
+        else: return dict()
+
+    @staticmethod
+    def v8(line,cal,tracker=None): #Processes the data for older firmware (v.8.13 - 8.44)
+        parsedDict=dict()
+        dtStr='DATE'
+        line=line.split("X")
+        for i in range(len(line)):
+            elem=line[i]
+            if elem.startswith(dtStr):
+                dateReader=read.options()[dtStr]
+                dateTime=dateReader(elem,cal.date)
+                if tracker!=None: dateTime=tracker.push(dtStr,dateTime)
+                if dateTime!=None: 
+                    parsedDict[dtStr]=dateTime
+                    line.pop(i) #Remove the datettime element from list so as not to double-read
+                    break #Stop the loop once a valid datetime has been found
+                #If a valid datetime has not been found, check the rest of the line
+        try: #If date could not be established, do not read or track line
+            if dateTime==None: return None
+        except: return None
+        for elem in line:
+            (eType,eParsed)=inspectElem(elem,tracker)
+            if eParsed: parsedDict[eType]=eParsed
+        return parsedDict
+
+    @staticmethod
+    def v9(line,cal,tracker=None): #Processes data for new firmware (v.9.13 and up)
+        pass
+
+
+    class check (object): #Methods & Heuristics for figuring out the RAMP firmware from a line of data
+        @staticmethod
+        def ifV8(line): #Check if line is consistent with v.8.13 - 8.44 RAMP firmware
+            #Determine whether the line is at least a 5-element "X"-delimited list
+            minLength=5
+            lineList=line.split("X")
+            if len(lineList)<minLength: return False
+            #Determine whether "DATE" and "ECHEM" fields are present, minimum requirements for a useful line
+            keyTerms={'DATE','ECHEM'}
+            for key in keyTerms:
+                if line.find(key)==-1: return False
+            #If the line passes these checks, it is likely a v8.xx line
+            return True
+
+        @staticmethod
+        def ifV9(line):  #Check if line is consistent with v.9.13+ RAMP firmware
+            #Look for keywords
+            keyTerms={'DATE','RAW','T','RH','CHRG','RUN'}
+            for key in keyTerms:
+                if line.find(key)==-1: return False
+            #Look for anti-keywords
+            antiKey={'ECHEM'}
+            for key in antiKey:
+                if line.find(key)!=-1: return False
+            #If all the keywords are present, attempt to process
+            return True           
+
 
 def inspectElem(elem,tracker):
     pDict=read.options() #Map of parameter name to read method
@@ -768,6 +817,6 @@ def closerDate(dates,lastDate,tgt):
     #both dates are after the target date
     if abs(diffD1)<=abs(diffLd1) and (diffD1>=zdt or diffD2<zdt): return True
 
-if __name__ == '__main__':
-    multiprocessing.freeze_support() #Enables conversion to executable
-    init()
+# if __name__ == '__main__':
+#     multiprocessing.freeze_support() #Enables conversion to executable
+#     init()
