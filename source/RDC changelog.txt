@@ -2,9 +2,8 @@
         #-Copy printed output to a debug file
         #-Menu for tracker selection (separate window?)
         #-Estimated time to completion    #Needs more datar
-	#-Add compatibility with new RAMPs
 
-    #1.2.0
+    #2.0.0
         #rawFileReader updated for compatibility with new PPA firmware
         #Script can now output POSIXTIME as well as DATETIME
         #Fixed bug where last header didn't get the "_RAMPNo." suffix"
@@ -27,7 +26,12 @@
 	#Fixed crash-causing bug caused by concatenating partial files without valid time stamps
 
         #_____TO DO____:
-        #-Overwrite files toggle?
+        #-Add compatibility with new RAMPs
+	#-Make RDCauto portable via class
+		#-Put global vars into a struct
+		#-Ensure appropriate packages are imported
+		#-Roll everything into a single class
+	#-Overwrite files toggle?
         #-Processor speed input when Log Performance is turned on?
         #-Add structure for choosing trackers
         #-Disable unnecessary trackers for Auto Remove
