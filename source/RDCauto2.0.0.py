@@ -657,7 +657,7 @@ class parse(object): #Collection of methods used to parse a line of data
             #Parse the data string after the time stamp
             tempDict=dict()
             pDict=read.v9.options() #Get map of readable headers
-            eLenDict=read.expectedLengths() #Get map of readable headers:expected number of outputs
+            eLenDict=read.v9.expectedLengths() #Get map of readable headers:expected number of outputs
             readableSet=pDict.keys()
             i=0 #Start immediately after the time stamp
             #Run thru line and attempt to parse out elements
@@ -936,3 +936,15 @@ def closerDate(dates,lastDate,tgt):
 #     print(totalFiles)
 #     print(tTime)
 #     print(tTime/totalFiles)
+
+def dummyCal(dateStr):
+    cal=Struct()
+    cal.date=str2Date(dateStr)
+    cal.param=config.importDict(TEMPLPATH)['Output']
+    cal.catNameDict=dict()
+    excludeSet={'Output File Name','Order'}
+    for key in cal.param:
+        if key not in excludeSet:
+            for item in cal.param[key]:
+                cal.catNameDict[item]=key
+    return cal

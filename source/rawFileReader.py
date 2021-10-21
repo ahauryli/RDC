@@ -17,7 +17,7 @@
 import string
 import datetime
 
-
+from functools import partial
 
 class read(object):
     def __init__(self): pass
@@ -31,29 +31,29 @@ class read(object):
                 "DATE"  : read.timeStamp,
                 "ECHEM" : read.echem.line,
                 "CO2"   : read.co2,
-                "BATT"  : read.batt.line,
+                "BATT"  : read.v8.batt.line,
                 "MET"   : read.met,
                 "TSI"   : read.tsi,
                 "ADI"   : read.adi,
                 "PPA"   : read.ppa.line,
-                "PTR"   : read.v8.ptr,
+#                "PTR"   : read.v8.ptr,
                 "STAT"  : read.v8.stat,
                 "BCM"   : read.bcm
             }
             return opt
 
-        @staticmethod
-        def ptr(s):
-            out={
-                "PTR010"    : (float,1,None),
-                "PTR010A"   : (float,2,None),
-                "PTR025"    : (float,3,None),
-                "PTR025A"   : (float,4,None),
-                "PTR100"    : (float,5,None),
-                "PTR100A"   : (float,6,None)
-                }
-            try: return read.vals(s,out,7)
-            except: return None
+        # @staticmethod
+        # def ptr(s):
+        #     out={
+        #         "PTR010"    : (float,1,None),
+        #         "PTR010A"   : (float,2,None),
+        #         "PTR025"    : (float,3,None),
+        #         "PTR025A"   : (float,4,None),
+        #         "PTR100"    : (float,5,None),
+        #         "PTR100A"   : (float,6,None)
+        #         }
+        #     try: return read.vals(s,out,7)
+        #     except: return None
 
         @staticmethod
         def stat(s):
@@ -82,6 +82,46 @@ class read(object):
             except:
                 try: return read.vals(s,outOld)
                 except: return None
+
+        class batt(object):
+            @staticmethod
+            def line(s):
+                out={
+                    "BATT"  : (int,1,1/100), #Battery voltage
+                    "STAT"  : (str,2,None)   #Battery status code
+                    }
+                try: 
+                    outVals=read.vals(s,out,len(out)+1) #Try to parse batt line from regular ramps
+                    outVals["STAT"]=read.batt.stat(outVals["STAT"])
+                    return outVals
+                except: 
+                    try: #Try to parse batt line from prototype ramp
+                        out={
+                        "BATT"  : (int,1,1/100), #Battery voltage
+                        "STAT"  : (str,2,None),  #Battery status string
+                        "CHRG" : (int,3,None), #Charging current
+                        "RUN"  : (int,4,None), #System current
+                        }
+                        outVals=read.vals(s,out,len(out)+1) #Try to parse batt line from new ramp
+                        outVals["STAT"]=read.batt.stat(outVals["STAT"])
+                        return outVals
+                    except: return None
+
+            @staticmethod
+            def stat(stat):
+                #Convert battery status 
+                if stat==None: return None
+                new=len(stat)==2 #How to tell whether the BATT stat line is new
+                try: stat=int(stat)
+                except: return None
+                if new:
+                    if stat<10: return "COLD" #0x of new stat line means cold battery
+                    elif stat==11: return "A/C" #x1 iof new stat line indicates charging
+                    else: return "BATTPWR"
+                else:
+                    if stat%2==0: return "FAULT" #xx0 means battery fault
+                    elif stat<100: return "COLD" #0xx means cold battery
+                    else: return "OK"
 
     class v9(object):
         def __init__(self): pass
@@ -133,6 +173,9 @@ class read(object):
 
                 "WD"    : read.singleVal,
                 "WS"    : read.singleVal,
+
+                "LAT"   : read.singleVal,
+                "LON"   : read.singleVal,
 
                 "MET"   : read.met,
                 "TSI"   : read.tsi,
@@ -202,7 +245,8 @@ class read(object):
         try:
             maxDateError=datetime.timedelta(days=2) 
             #Date stamps in file may be off from file date by this amount
-            s=s.split(',')[1] #After splitting, s=['DATE',datetime]
+            if s.find(',')!=-1: #If a comma is present in the substring
+                s=s.split(',')[1] #After splitting, s=['DATE',datetime]
             (date,time)=s.split(' ') #split datetime into date and time string by space
 
             (m,d,y)=date.split("/") #Assumes format is m/d/y
@@ -337,46 +381,6 @@ class read(object):
                 "VOC"   : "S4"
                 }
             return place[gas]+readType
-
-    class batt(object):
-        @staticmethod
-        def line(s):
-            out={
-                "BATT"  : (int,1,1/100), #Battery voltage
-                "STAT"  : (str,2,None)   #Battery status code
-                }
-            try: 
-                outVals=read.vals(s,out,len(out)+1) #Try to parse batt line from regular ramps
-                outVals["STAT"]=read.batt.stat(outVals["STAT"])
-                return outVals
-            except: 
-                try: #Try to parse batt line from prototype ramp
-                    out={
-                    "BATT"  : (int,1,1/100), #Battery voltage
-                    "STAT"  : (str,2,None),  #Battery status string
-                    "CCHRG" : (int,3,None), #Charging current
-                    "CSYS"  : (int,4,None), #System current
-                    }
-                    outVals=read.vals(s,out,len(out)+1) #Try to parse batt line from new ramp
-                    outVals["STAT"]=read.batt.stat(outVals["STAT"])
-                    return outVals
-                except: return None
-
-        @staticmethod
-        def stat(stat):
-            #Convert battery status 
-            if stat==None: return None
-            new=len(stat)==2 #How to tell whether the BATT stat line is new
-            try: stat=int(stat)
-            except: return None
-            if new:
-                if stat<10: return "COLD" #0x of new stat line means cold battery
-                elif stat==11: return "A/C" #x1 iof new stat line indicates charging
-                else: return "BATTPWR"
-            else:
-                if stat%2==0: return "FAULT" #xx0 means battery fault
-                elif stat<100: return "COLD" #0xx means cold battery
-                else: return "OK"
 
     @staticmethod
     def met(s):
@@ -732,7 +736,8 @@ class read(object):
         #As well as a string of values
         #Delimits the string, and attempts to populate the dictionary with:
         #Element from the string in place P, converted to data type D, and multiplied by M
-        s=s.split(dlm)
+        if type(s)==str:
+            s=s.split(dlm)
         if l!=None and len(s)!=l: return None #Does not parse if the list is of unexpected length
         for key in param:
             (dType,place,mult)=(param[key][0],param[key][1],param[key][2])
