@@ -31,18 +31,17 @@
 		#-Put global vars into a struct
 		#-Ensure appropriate packages are imported
 		#-Roll everything into a single class
+	#-Don't lose shit if no sensor mix entry
+        #-Bug: crashes when no ECHEM output
+        #-Fix bug that causes crash when auto checks are disabled
+	#-Bug: No valid files found if S177 instead of s177
 	#-Overwrite files toggle?
         #-Processor speed input when Log Performance is turned on?
-        #-Add structure for choosing trackers
         #-Disable unnecessary trackers for Auto Remove
         #-Improve prediction of expected data yield?
         #-Parallellize file searching
         #-Revise bounds.ini file
         #-Change multiprocessing from pool to queue?
-        #-Don't lose shit if no sensor mix entry
-        #-Bug: crashes when no ECHEM output
-        #-Fix bug that causes crash when auto checks are disabled
-	#-Bug: No valid files found if S177 instead of s177
 
     #0.1.1 2018-8-31
         #BCM information can now be parsed in
