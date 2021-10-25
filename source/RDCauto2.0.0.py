@@ -567,7 +567,6 @@ class parse(object): #Collection of methods used to parse a line of data
             wLine=config4Writing(pDict,cal) #Rewrites dictionary as an output string
             if wLine!=None: cal.write(wLine)  #If valid string, write to processed file
 
-
         @staticmethod
         def line(line,cal,tracker=None): #Processes the data for older firmware (v.8.13 - 8.44)
             parsedDict=dict()
