@@ -36,7 +36,7 @@ class read(object):
                 "TSI"   : read.tsi,
                 "ADI"   : read.adi,
                 "PPA"   : read.ppa.line,
-#                "PTR"   : read.v8.ptr,
+                #"PTR"   : read.v8.ptr,
                 "STAT"  : read.v8.stat,
                 "BCM"   : read.bcm
             }
@@ -429,7 +429,7 @@ class read(object):
             lFormat={ #Order of parameters in new firmware line
                     "T_PPA" :   (int,1,None),
                     "H_PPA" :   (int,2,None),
-                    # "DP"  :   (float,3,None),
+                    # "DP"    :   (float,3,None),
                     "P_PPA" :   (float,4,None),
                     # "Alt" :   (float,5,None),
                     "PM010A":   (float,6,None),

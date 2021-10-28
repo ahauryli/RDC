@@ -215,13 +215,16 @@ class errorTracker(object):
             self.subTrackers=\
                 { #Creates tracker helpers and passes them the required parameters
                 "DATE":     tGapTracker(runInfo.get("Time Gap"),self.fSize,cDict["DATE"])
-                ,"CO2":     valTracker(runInfo,"CO2",bDict["CO2"],cDict["CO2"])
+                ,"METEO":   valTracker(runInfo,"METEO",bDict["METEO"],cDict["METEO"])
                 ,"ECHEM":   eChemTracker(runInfo,"ECHEM",bDict["ECHEM"],cDict["ECHEM"],self.echem)
                 ,"MET":     metTracker(runInfo,"MET",bDict["MET"],cDict["MET"])
                 ,"TSI":     tsiTracker(runInfo,"TSI",bDict["TSI"],cDict["TSI"])
                 ,"ADI":     adiTracker(runInfo,"ADI",bDict["ADI"],cDict["ADI"])
-                ,"PPA":     ppaTracker(runInfo,"PPA",bDict["PPA"],cDict["PPA"])
-                ,"BATT":    battTracker(runInfo,"BATT",bDict["BATT"],cDict["BATT"])
+                ,"PPA":     ptrTracker(runInfo,"PPA",bDict["PPA"],cDict["PPA"])
+                ,"PTR":     ptrTracker(runInfo,"PTR",bDict["PTR"],cDict["PTR"])
+                ,"PWR":     battTracker(runInfo,"PWR",bDict["PWR"],cDict["PWR"])
+                ,"WIND":    valTracker(runInfo,"WIND",bDict["WIND"],cDict["WIND"])
+                ,"GPS":     gpsTracker(runInfo,"GPS",bDict["GPS"],cDict["GPS"])
                 ,"STAT":    statTracker(runInfo,"STAT",bDict["STAT"],cDict["STAT"])
                 }
 
