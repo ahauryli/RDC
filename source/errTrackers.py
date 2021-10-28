@@ -18,6 +18,7 @@
 
 import datetime as dt
 import copy
+import pdb
 from confReader import config
 from genericHelpers import *
 
@@ -217,7 +218,7 @@ class errorTracker(object):
             self.subTrackers=\
                 { #Creates tracker helpers and passes them the required parameters
                 "DATE":     tGapTracker(runInfo.get("Time Gap"),self.fSize,cDict["DATE"])
-                ,"METEO":   valTracker(runInfo,"METEO",bDict["METEO"],cDict["METEO"])
+                ,"CO2":     valTracker(runInfo,"CO2",bDict["CO2"],cDict["CO2"])
                 ,"ECHEM":   eChemTracker(runInfo,"ECHEM",bDict["ECHEM"],cDict["ECHEM"],self.echem)
                 ,"MET":     metTracker(runInfo,"MET",bDict["MET"],cDict["MET"])
                 ,"TSI":     tsiTracker(runInfo,"TSI",bDict["TSI"],cDict["TSI"])
@@ -877,7 +878,6 @@ class eChemTracker(valTracker):
         if type(pushReturn)==dict: return eChemTracker.encode(pushReturn,self.encodeDict)
         else: return pushReturn
 
-
     def decode(self,val):
         #Converst S1NET:60, S2NET: 30, etc. to e.g. CONET:60, SO2NET: 30, etc.
         newDict=dict()
@@ -889,8 +889,7 @@ class eChemTracker(valTracker):
     @staticmethod
     def encode(D,enc):
         nD=dict()
-        for key in enc:
-            nD[enc[key]]=D[key]
+        for key in D: nD[enc[key]]=D[key]
         return nD
 
     def setupddt(self):

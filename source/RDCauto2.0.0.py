@@ -583,7 +583,7 @@ class parse(object): #Collection of methods used to parse a line of data
         @staticmethod
         def chunk(line,cal,tracker=None): #Wrapper for parse.v8.line(), additionally handles reading/writing
             pDict=parse.v8.line(line,cal,tracker)
-            wLine=parse.v8.config4Writing(pDict,cal) #Rewrites dictionary as an output string
+            wLine=parse.config4Writing(pDict,cal) #Rewrites dictionary as an output string
             if wLine!=None: cal.write(wLine)  #If valid string, write to processed file
 
         @staticmethod
@@ -625,27 +625,6 @@ class parse(object): #Collection of methods used to parse a line of data
                     return(None,None)
             return (None,None)
 
-        @staticmethod
-        def config4Writing(pDict,cal):
-            if pDict==None: return None #If whole line couldn't be read (e.g. bad date stamp)
-            params=cal.output['params']
-            order=cal.order #dictionary pre-compiled in the calFile object
-            nLine=copy.copy(cal.blankLine)
-            for key in pDict:
-                if key in params and key in order:
-                    place=order[key]
-                    subList=copy.copy(params[key])
-                    for i in range(len(subList)):
-                        item=pDict[key][subList[i]]
-                        if checkASCII(str(item)):
-                            subList[i]=item
-                    nLine[place]=subList
-            nLine=flatten(nLine)
-            nLine=stringify(nLine)
-            dlm=","
-            nLine=dlm.join(nLine)+"\n"
-            return nLine
-
     class v9(object):
         def __init__(self): pass
 
@@ -670,7 +649,7 @@ class parse(object): #Collection of methods used to parse a line of data
                 for singleLine in isolatedLines[1:]:
                 #Go thru points one-by-one (fist element definitely not a data pt, no "DATE" header)
                     pDict=parse.v9.line(singleLine,cal,tracker)
-                    wLine=parse.v9.config4Writing(pDict,cal) #Rewrites dictionary as an output string
+                    wLine=parse.config4Writing(pDict,cal) #Rewrites dictionary as an output string
                     if wLine!=None: cal.write(wLine)
 
         @staticmethod
@@ -742,15 +721,14 @@ class parse(object): #Collection of methods used to parse a line of data
                 tempDict.update(parsedDict)
                 return tempDict
 
-        @staticmethod
-        def config4Writing(pDict,cal):
-            if pDict==None: return None #If whole line couldn't be read (e.g. bad date stamp)
-            outList=cal.pDict2valLine(pDict)
-            nLine=stringify(outList)
-            dlm=","
-            nLine=dlm.join(nLine)+"\n"
-            return nLine
-
+    @staticmethod
+    def config4Writing(pDict,cal):
+        if pDict==None: return None #If whole line couldn't be read (e.g. bad date stamp)
+        outList=cal.pDict2valLine(pDict)
+        nLine=stringify(outList)
+        dlm=","
+        nLine=dlm.join(nLine)+"\n"
+        return nLine
 
 def logPerformance(runInfo,lFiles,sFiles,runTime):
     #Records completion speed and other statistics
@@ -939,9 +917,9 @@ def closerDate(dates,lastDate,tgt):
     #both dates are after the target date
     if abs(diffD1)<=abs(diffLd1) and (diffD1>=zdt or diffD2<zdt): return True
 
-# if __name__ == '__main__':
-#     multiprocessing.freeze_support() #Enables conversion to executable
-#     init()
+if __name__ == '__main__':
+    multiprocessing.freeze_support() #Enables conversion to executable
+    init()
 
 ##_________HERE BE THE DRAGONS (TEST CODE)_________##
 

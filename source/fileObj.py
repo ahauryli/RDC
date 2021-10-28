@@ -370,7 +370,7 @@ class calFile(dataFile):
     def __init__(self,ramp,date,path,runInfo):
         super().__init__(ramp,date,path)
         self.echemOrdDict=calFile.convertEchem2OrdDict(ramp.echem)
-        self.echem=calFile.getEchemDecode(self.echemOrdDict)
+        self.echem=self.getEchemDecode()
         self.output=ramp.output
 
         self.blankLine=None         #Defined in self.writeStartLine method
@@ -421,14 +421,15 @@ class calFile(dataFile):
         if pDict==None: return None #If whole line couldn't be read (e.g. bad date stamp)
         nLine=copy.copy(self.blankLine) #Create a new list of values to output
         for key in self.order: #Go thru categories in output order
-            if key in pDict and key in self.output['params']: #If the category is in the parsed dict & output  dict
+            if (key in pDict) & (key in self.output['params']): #If the category is in the parsed dict & output  dict
                 iCat=self.order[key] #Index in nLine
                 oCat=self.output['params'][key] #Order of parameters in category
                 subLine=copy.copy(oCat)
                 for i in range(len(subLine)): #Go parameter by parameter
                     param=subLine[i]    #Parameter name
                     if param in pDict[key]: #If parameter in parsed Dict
-                        subLine[i]=pDict[key][param] #Add to subline
+                        item=pDict[key][param] #Pull the reading in question
+                        if checkASCII(str(item)):subLine[i]=item #Add to subline
                     else: subLine[i]=None #Otherwise, replace param name w. None
                 nLine[iCat]=copy.copy(subLine) #Copy parameter order into correct slot in nLine
         return flatten(nLine)
@@ -442,6 +443,23 @@ class calFile(dataFile):
             newOrder[i]=gasDecode
         return newOrder
 
+    def getEchemDecode(self):
+        #Converts an order dictionary e.g.{CO:1, SO2:2} into a decode dictionary:
+        #e.g. {S1AUX:COAUX, S2NET:SO2NET}, pulling parameters from a read method
+        #and the order from a list processed by calFile.convertEchem2OrdDict
+        dlm='' #What goes between the gas name and the reading type. e.g. if dlm=='.': CO.AUX
+        endStrLen=3 #Length of the string at the end describing reading type (e.g AUX, NET, ACT)
+        decodeDict=dict()
+        allEchem=self.ramp.output['params']['ECHEM']
+        for param in allEchem:
+            sensor=param[0:-endStrLen] #Get sensor name (e.g. S1, S2, S3, S4)
+            suffix=param[-endStrLen:] #Get the reading suffix ('NET','ACT','AUX')
+            sPlace=int(sensor[1:]) #Get the sensor order by chopping off the "S"
+            gasType=self.echemOrdDict[sPlace] #Query the gas type of the sensor
+            outStr=gasType+dlm+suffix #Reconstruct str (e.g. COAUX)
+            decodeDict[param]=outStr #Store in dictionary: S1AUX:COAUX
+        return decodeDict
+
     @staticmethod
     def convertEchem2OrdDict(echemLine):
         #Given a list e.g. ["CO","SO2","NO2","O3"] converts to an order dictionary
@@ -450,24 +468,6 @@ class calFile(dataFile):
         for i in range(len(echemLine)):
             echemDict[i+1]=echemLine[i]
         return echemDict
-
-    @staticmethod
-    def getEchemDecode(echemOrdDict):
-        #Converts an order dictionary e.g.{CO:1, SO2:2} into a decode dictionary:
-        #e.g. {S1AUX:COAUX, S2NET:SO2NET}, pulling parameters from a read method
-        #and the order from a list processed by calFile.convertEchem2OrdDict
-        dlm='' #What goes between the gas name and the reading type. e.g. if dlm=='.': CO.AUX
-        endStrLen=3 #Length of the string at the end describing reading type (e.g AUX, NET, ACT)
-        decodeDict=dict()
-        allParams=read.echem.outputParams().keys()
-        for param in allParams:
-            sensor=param[0:-endStrLen] #Get sensor name (e.g. S1, S2, S3, S4)
-            suffix=param[-endStrLen:] #Get the reading suffix ('NET','ACT','AUX')
-            sPlace=int(sensor[1:]) #Get the sensor order by chopping off the "S"
-            gasType=echemOrdDict[sPlace] #Query the gas type of the sensor
-            outStr=gasType+dlm+suffix #Reconstruct str (e.g. COAUX)
-            decodeDict[param]=outStr #Store in dictionary: S1AUX:COAUX
-        return decodeDict
 
     @staticmethod
     def ext(): #file extension (after the date)

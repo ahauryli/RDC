@@ -24,19 +24,23 @@
         #Fixed bug occurring for s120 on 2018-2-23/24 (NoneType & datetime.timedelta comparison)
         #Fixed bug causing file concatenation to crash (due to temp files being deleted)
         #Fixed crash-causing bug caused by concatenating partial files without valid time stamps
+	#Fix multiple 'no valid file' messages from single RAMP
+	#Fix CAL values not being read in properly
 
         #_____TO DO____:
         #-Add compatibility with new RAMPs
-	#-Fix multiple 'no valid file' messages from single RAMP
+		#-Fix lack of METEO output on the old RAMPs
+		#-Fix lack of PPA output on the old RAMPs
+		#-Add compatibility for strings of unknown or variable length
 	#-Make RDCauto portable via class
 		#-Put global vars into a struct
 		#-Ensure appropriate packages are imported
 		#-Roll everything into a single class
+	#-Overwrite files toggle?
 	#-Don't lose shit if no sensor mix entry
         #-Bug: crashes when no ECHEM output
         #-Fix bug that causes crash when auto checks are disabled
 	#-Bug: No valid files found if S177 instead of s177
-	#-Overwrite files toggle?
         #-Processor speed input when Log Performance is turned on?
         #-Disable unnecessary trackers for Auto Remove
         #-Improve prediction of expected data yield?
