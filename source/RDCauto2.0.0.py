@@ -6,6 +6,7 @@ import sys
 import time
 import copy
 import multiprocessing
+import pdb
 from multiprocessing import Pool,cpu_count
 
 #Importing custom libraries
@@ -29,7 +30,7 @@ OUTPUT="Output"
 VERSION="version.ini"
 TEMPLATE="template.ini"
 DEPENDENCIES="dependencies.ini"
-RUNFILE="run.ini"
+RUNFILE="test2021-10-28.ini"
 CRITERIA="bounds.ini"
 CONST="const.ini"
 ECHEM="SensorMix.csv"
@@ -705,6 +706,7 @@ def config4Writing(pDict,cal):
     params=cal.output['params']
     order=cal.order #dictionary pre-compiled in the calFile object
     nLine=copy.copy(cal.blankLine)
+#    pdb.set_trace()
     for key in pDict:
         if key in params and key in order:
             place=order[key]
@@ -938,14 +940,14 @@ def closerDate(dates,lastDate,tgt):
 #     print(tTime)
 #     print(tTime/totalFiles)
 
-def dummyCal(dateStr):
-    cal=Struct()
-    cal.date=str2Date(dateStr)
-    cal.param=config.importDict(TEMPLPATH)['Output']
-    cal.catNameDict=dict()
-    excludeSet={'Output File Name','Order'}
-    for key in cal.param:
-        if key not in excludeSet:
-            for item in cal.param[key]:
-                cal.catNameDict[item]=key
-    return cal
+# def dummyCal(dateStr):
+#     cal=Struct()
+#     cal.date=str2Date(dateStr)
+#     cal.param=config.importDict(TEMPLPATH)['Output']
+#     cal.catNameDict=dict()
+#     excludeSet={'Output File Name','Order'}
+#     for key in cal.param:
+#         if key not in excludeSet:
+#             for item in cal.param[key]:
+#                 cal.catNameDict[item]=key
+#     return cal

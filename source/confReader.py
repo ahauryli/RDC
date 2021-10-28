@@ -730,8 +730,8 @@ class config(object):
         class ramp(object):
             @staticmethod
             def number(n):
-                rMin=90
-                rMax=500
+                rMin=100
+                rMax=10000
                 return (type(n)==int and n>=rMin and n<=rMax)
 
             @staticmethod

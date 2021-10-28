@@ -1,4 +1,6 @@
 #__CHANGELOG__#
+    #2021-10-28
+        #Updated for compatibility w. v9 firmware
     #2018-11-14
         #Switched Error Tracker to get criteria et
     #2018-11-13
@@ -224,7 +226,7 @@ class errorTracker(object):
                 ,"PTR":     ptrTracker(runInfo,"PTR",bDict["PTR"],cDict["PTR"])
                 ,"PWR":     battTracker(runInfo,"PWR",bDict["PWR"],cDict["PWR"])
                 ,"WIND":    valTracker(runInfo,"WIND",bDict["WIND"],cDict["WIND"])
-                ,"GPS":     gpsTracker(runInfo,"GPS",bDict["GPS"],cDict["GPS"])
+                ,"GPS":     valTracker(runInfo,"GPS",bDict["GPS"],cDict["GPS"])
                 ,"STAT":    statTracker(runInfo,"STAT",bDict["STAT"],cDict["STAT"])
                 }
 
@@ -1104,29 +1106,40 @@ class statTracker(valTracker):
                 return None
             self.vals["current"]=val
             self.checkConn(time,dt)
-            self.checkFlag(time,"recharge",0,{1 : "SIM DEPLETED"})
+            #self.checkFlag(time,"recharge",0,{1 : "SIM DEPLETED"})
             self.checkSD(time)
             self.checkSignal(time)
         return None
 
     def checkSD(self,time):
-        sdFlag=self.vals["current"]["SDstat"]
+        sdFlag=self.vals["current"]["SD"]
         if sdFlag==None: return
         elif len(sdFlag)==2: #i.e. flag is from old firmware
-            if sdFlag[0]=="1": self.eFlags["SDstat"]["NO SD"].append(time)
-            elif sdFlag[1]=="1": self.eFlags["SDstat"]["SD ERROR"].append(time)
+            if sdFlag[0]=="1": self.eFlags["SD"]["NO SD"].append(time)
+            elif sdFlag[1]=="1": self.eFlags["SD"]["SD ERROR"].append(time)
         elif len(sdFlag)==3: #i.e. if new firmware
-            if sdFlag[0]=="0":  self.eFlags["SDstat"]["NO SD"].append(time)
-            elif sdFlag[1]=="0":self.eFlags["SDstat"]["SD INIT ERROR"].append(time)
-            elif sdFlag[2]=="1":self.eFlags["SDstat"]["SD ERROR"].append(time)
+            if sdFlag[0]=="0":  self.eFlags["SD"]["NO SD"].append(time)
+            elif sdFlag[1]=="0":self.eFlags["SD"]["SD INIT ERROR"].append(time)
+            elif sdFlag[2]=="1":self.eFlags["SD"]["SD ERROR"].append(time)
+
+    def checkECREAD(self,time): #Check that electrochecmical sensors are connected
+        ecFlag=self.vals["current"]["ECREAD"]
+        if ecFlag==None: return
+        elif ecFlag[0]=="1": self.eFlags["ECREAD"]["S1ERROR"].append(time)
+        elif ecFlag[1]=="1": self.eFlags["ECREAD"]["S2ERROR"].append(time)
+        elif ecFlag[2]=="1": self.eFlags["ECREAD"]["S3ERROR"].append(time)
+        elif ecFlag[3]=="1": self.eFlags["ECREAD"]["S4ERROR"].append(time)
+
 
     def checkSignal(self,time):
         if type(self.vals["current"]["signal"])==int and  self.vals["current"]["signal"]<10: 
                 self.eFlags["signal"]["LOW"].append(time) 
 
     def initializeFlags(self):
-        self.eFlags["SDstat"]={"NO SD": list(), "SD ERROR": list(), "SD INIT ERROR": list()}
+        self.eFlags["SD"]={"NO SD": list(), "SD ERROR": list(), "SD INIT ERROR": list()}
         self.eFlags["signal"]={"LOW": list()}
+        self.eFlags["ECREAD"]={"S1ERROR": list(),"S2ERROR": list(),
+                               "S3ERROR": list(),"S4ERROR": list()}
 
 class ddtTracker(object):
     #Keeps a small list of values, derivatives, and times on hand for average derivatives,

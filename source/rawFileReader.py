@@ -58,29 +58,35 @@ class read(object):
         @staticmethod
         def stat(s):
             outOld={
-                "recharge"  : (int,1,None),
+                #"recharge"  : (int,1,None),
                 "signal"    : (int,2,None),
                 #"ratio"     : (int,3,None),
                 #"interval"  : (int,4,None),
                 #"pump"      : (int,5,None),
                 #"ADC"       : (int,6,None),
-                "SDstat"    : (str,7,None),
+                "SD"    : (str,7,None),
                 #"AUXstat"   : (int,8,None)
                 }
             outNew= {
-                    "recharge"  : (int,1,None),
+                    #"recharge"  : (int,1,None),
                     "signal"    : (int,2,None),
                     #"ratio"     : (int,3,None),
                     #"interval"  : (int,4,None),
                     #"filter"    : (int,5,None),
                     #"pump"      : (int,6,None),
                     #"ADC"       : (int,7,None),
-                    "SDstat"    : (str,8,None),
+                    "SD"    : (str,8,None),
                     #"AUXstat"   : (int,9,None)
                     }
-            try: return read.vals(s,outNew)
+            try:
+                outDict=read.vals(s,outNew)
+                outDict['ECREAD']=None #For compatibility w. v9.xx firmware
+                return outDict
             except:
-                try: return read.vals(s,outOld)
+                try: 
+                    outDict=read.vals(s,outOld)
+                    outDict['ECREAD']=None #For compatibility w. v9.xx firmware
+                    return outDict
                 except: return None
 
         class batt(object):
@@ -235,6 +241,7 @@ class read(object):
                 outDict["SD"]=statDict["HEX1"][0:3]
             if h2:
                 outDict["ECREAD"]=statDict["HEX2"][0:4]
+            outDict['signal']=None #For compatibility w. 8.xx firmware. New RAMPs don't report signal
             return outDict
 
     @staticmethod
