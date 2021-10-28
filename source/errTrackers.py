@@ -358,7 +358,8 @@ class valTracker(object):
             for key in last:
                 if (key.endswith("FLAG") or key in self.flagNames): return #Filters out error flags
                 elif key not in self.ddt and self.ddtOn: self.ddt[key]=ddtTracker()
-                if last[key]!=None and current[key]!=None and dt!=None:
+                if (key in last) and (key in current)\
+                    and last[key]!=None and current[key]!=None and dt!=None:
                     change=last[key]-current[key]
                     if self.ddtOn: self.ddt[key].push(time,current[key],change,dt)
                     if dt>0: 
@@ -1047,10 +1048,11 @@ class battTracker(valTracker):
         #Special function to verify battery error flags 
         okFlags={"A/C","OK","BATTPWR"} #Flags which do not require an error to be dispayed
         if "STAT" not in self.eFlags: self.eFlags["STAT"]=dict() #Declare stat error dict if absent
-        flag=self.vals["current"]["STAT"]
-        if flag!=None and flag not in okFlags:
-            if flag in self.eFlags["STAT"]: self.eFlags["STAT"][flag].append(time)
-            else: self.eFlags["STAT"][flag]=[time]
+        if "STAT" in self.vals["current"]:
+            flag=self.vals["current"]["STAT"]
+            if flag!=None and flag not in okFlags:
+                if flag in self.eFlags["STAT"]: self.eFlags["STAT"][flag].append(time)
+                else: self.eFlags["STAT"][flag]=[time]
 
     def checkPowerLoss(self,time):
         #Checks for power loss by monitoring battery voltage and its average change

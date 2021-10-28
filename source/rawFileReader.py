@@ -353,15 +353,19 @@ class read(object):
                     "S1AUX" :   None,
                     "S1ACT" :   None,
                     "S1NET" :   None,
+                    "S1CAL" :   None,
                     "S2AUX" :   None,
                     "S2ACT" :   None,
                     "S2NET" :   None,
+                    "S2CAL" :   None,
                     "S3AUX" :   None,
                     "S3ACT" :   None,
                     "S3NET" :   None,
+                    "S3CAL" :   None,
                     "S4AUX" :   None,
                     "S4ACT" :   None,
                     "S4NET" :   None,
+                    "S4CAL" :   None
                     }
 
         @staticmethod

@@ -16,6 +16,7 @@ import string
 import sys
 import copy
 import shutil
+import pdb
 from genericHelpers import *
 from rawFileReader import read
 
@@ -366,11 +367,36 @@ class rawFile(dataFile):
         f3.end=f2.end
 
 class calFile(dataFile):
-    def __init__(self,ramp,date,path):
+    def __init__(self,ramp,date,path,runInfo):
         super().__init__(ramp,date,path)
         self.echemOrdDict=calFile.convertEchem2OrdDict(ramp.echem)
         self.echem=calFile.getEchemDecode(self.echemOrdDict)
         self.output=ramp.output
+
+        self.blankLine=None         #Defined in self.writeStartLine method
+        self.paramOrder=None        #Defined in self.writeStartLine method
+        self.catNameDict=runInfo.rOutputDict
+        self.parsedBlankDict=dict() #Populated in self.compileParsedRefDicts
+        self.compileParsedRefDicts()
+
+
+    def compileParsedRefDicts(self):
+        #Creates a Dictionary mapping parameter name to category
+        #e.g. {PTR: [PM010, PM025, PM100]} --> {PM010:PTR, PM025:PTR, PM100:PTR}
+        #and a blank dictionary to be used by config4writing function:
+        #e.g {PTR: [PM010, PM025, PM100]} --> {PTR: {PM010: None, PM025: None, PM100: None}}
+
+        outputDict=self.output['params'] #Get source dictionary
+
+        for key in outputDict:
+            entry=outputDict[key]
+            if entry==None:
+                continue
+            else:
+                self.parsedBlankDict[key]=dict()
+
+            for value in outputDict[key]:
+                self.parsedBlankDict[key][value]=None
 
     def writeStartLine(self):
         #Format: 
@@ -381,6 +407,7 @@ class calFile(dataFile):
 
         self.blankLine=calFile.genBlankLine(params)
         self.order=order
+        self.paramOrder=flatten(params)
 
         vals=flatten(params) #Flatten list to 1d
         apStr=('_%s') %str(self.ramp) # Add _RAMP No. to every header
@@ -389,6 +416,23 @@ class calFile(dataFile):
         outStr=','.join(vals) #Separate headers with commas
         outStr+='\n'
         self.write(outStr)
+
+    def pDict2valLine(self,pDict):
+        if pDict==None: return None #If whole line couldn't be read (e.g. bad date stamp)
+        nLine=copy.copy(self.blankLine) #Create a new list of values to output
+        for key in self.order: #Go thru categories in output order
+            if key in pDict and key in self.output['params']: #If the category is in the parsed dict & output  dict
+                iCat=self.order[key] #Index in nLine
+                oCat=self.output['params'][key] #Order of parameters in category
+                subLine=copy.copy(oCat)
+                for i in range(len(subLine)): #Go parameter by parameter
+                    param=subLine[i]    #Parameter name
+                    if param in pDict[key]: #If parameter in parsed Dict
+                        subLine[i]=pDict[key][param] #Add to subline
+                    else: subLine[i]=None #Otherwise, replace param name w. None
+                nLine[iCat]=copy.copy(subLine) #Copy parameter order into correct slot in nLine
+        return flatten(nLine)
+
 
     def orderECHEM(self,order):
         newOrder=copy.copy(order)
@@ -466,7 +510,7 @@ class calFile(dataFile):
         dirStr=os.path.join(calDir,rampStr)
         date=rawFile.date
         path=os.path.join(dirStr,str(date)+calFile.ext())
-        out=calFile(ramp,date,path)
+        out=calFile(ramp,date,path,runInfo)
         return out
 
 class errorFile(dataFile):

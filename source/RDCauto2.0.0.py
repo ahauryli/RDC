@@ -68,9 +68,11 @@ class runParams(object):
         self.yesterday=datetime.date.today()-datetime.timedelta(days=1)
         self.rampDict=dict() #Maps RAMP number to RAMP object
         self.rParamDict=dict() #e.g. Raw Directory:Paths, Auto Checks:Toggles
+        self.rOutputDict=dict()  #e.g. {PTR: [PM010, PM025, PM100]} --> {PM010:PTR, PM025:PTR, PM100:PTR} (from template)
         self.echemDict=dict()
         print("Writing Reverse Dictionary")
         self.writeReverseDict() #auto-Populates self.rParamDict
+        self.writeCatNameDict() #auto-Populates self.rOutputDict
 
     def __repr__(self):
         #Uniquely represents a runParams object as a string containing
@@ -111,6 +113,20 @@ class runParams(object):
         for key in self.param:
             for subkey in self.param[key]: 
                 self.rParamDict[subkey]=key
+
+    def writeCatNameDict(self):
+        #Creates a Dictionary mapping parameter name to category
+        #e.g. {PTR: [PM010, PM025, PM100]} --> {PM010:PTR, PM025:PTR, PM100:PTR}
+        outputDict=self.param['Output']
+        excludeSet={'Order','Output File Name'} #Headers w/o parsed param names
+        for key in outputDict:
+            if key not in excludeSet:
+                entry=outputDict[key]
+                if type(entry)==list: #Iterate thru param lists if needed to get ea. elem
+                    for value in outputDict[key]:
+                        self.rOutputDict[value]=key
+                else:
+                    self.rOutputDict[entry]=key #Otherwise just add to reversedict
 
     def loadParams(self):
         print("\nLoading Parameters")
@@ -335,6 +351,7 @@ def listFiles(runInfo,files):
         #Precompile dicts of dates mapped to sets of paths for which these dates are present
         serverDict=precompilePathSet(ramp.dirs["Server"])
         sdDict=precompilePathSet(ramp.dirs["SD"])
+        nFiles=0
         for date in runInfo.get("Date Range"): #Go date by date
             (sdFiles,serverFiles)=(set(),set())
             if date in sdDict: #Get SD files corresponding to the date
@@ -348,8 +365,9 @@ def listFiles(runInfo,files):
             readFile=rawFile.get.bestFile({rawFileServ,rawFileSD},concatDir) #THERE CAN BE ONLY ONE
             if readFile!=None: 
                 addFile(files,readFile,runInfo)
-            elif runInfo.get("Print Output"):
-                print("RAMP %d: No useable files found" %rampNum)
+                nFiles+=1
+        if nFiles==0 and runInfo.get("Print Output"):
+            print("RAMP %d: No useable files found" %rampNum)
 
 def precompilePathSet(dirList):
     #outputs a set of all date files in a directory and returns it
@@ -565,7 +583,7 @@ class parse(object): #Collection of methods used to parse a line of data
         @staticmethod
         def chunk(line,cal,tracker=None): #Wrapper for parse.v8.line(), additionally handles reading/writing
             pDict=parse.v8.line(line,cal,tracker)
-            wLine=config4Writing(pDict,cal) #Rewrites dictionary as an output string
+            wLine=parse.v8.config4Writing(pDict,cal) #Rewrites dictionary as an output string
             if wLine!=None: cal.write(wLine)  #If valid string, write to processed file
 
         @staticmethod
@@ -607,6 +625,27 @@ class parse(object): #Collection of methods used to parse a line of data
                     return(None,None)
             return (None,None)
 
+        @staticmethod
+        def config4Writing(pDict,cal):
+            if pDict==None: return None #If whole line couldn't be read (e.g. bad date stamp)
+            params=cal.output['params']
+            order=cal.order #dictionary pre-compiled in the calFile object
+            nLine=copy.copy(cal.blankLine)
+            for key in pDict:
+                if key in params and key in order:
+                    place=order[key]
+                    subList=copy.copy(params[key])
+                    for i in range(len(subList)):
+                        item=pDict[key][subList[i]]
+                        if checkASCII(str(item)):
+                            subList[i]=item
+                    nLine[place]=subList
+            nLine=flatten(nLine)
+            nLine=stringify(nLine)
+            dlm=","
+            nLine=dlm.join(nLine)+"\n"
+            return nLine
+
     class v9(object):
         def __init__(self): pass
 
@@ -631,7 +670,7 @@ class parse(object): #Collection of methods used to parse a line of data
                 for singleLine in isolatedLines[1:]:
                 #Go thru points one-by-one (fist element definitely not a data pt, no "DATE" header)
                     pDict=parse.v9.line(singleLine,cal,tracker)
-                    wLine=config4Writing(pDict,cal) #Rewrites dictionary as an output string
+                    wLine=parse.v9.config4Writing(pDict,cal) #Rewrites dictionary as an output string
                     if wLine!=None: cal.write(wLine)
 
         @staticmethod
@@ -696,31 +735,22 @@ class parse(object): #Collection of methods used to parse a line of data
                 for cat in tempDict:
                     try:
                         parsedDict[cat]=tracker.push(cat,tempDict[cat])
-                    except: raise RuntimeError(cat,tempDict[cat])
+                    except: 
+                        raise RuntimeError(cat,tempDict[cat])
                 return parsedDict
             else:
+                tempDict.update(parsedDict)
                 return tempDict
 
-def config4Writing(pDict,cal):
-    if pDict==None: return None #If whole line couldn't be read (e.g. bad date stamp)
-    params=cal.output['params']
-    order=cal.order #dictionary pre-compiled in the calFile object
-    nLine=copy.copy(cal.blankLine)
-#    pdb.set_trace()
-    for key in pDict:
-        if key in params and key in order:
-            place=order[key]
-            subList=copy.copy(params[key])
-            for i in range(len(subList)):
-                item=pDict[key][subList[i]]
-                if checkASCII(str(item)):
-                    subList[i]=item
-            nLine[place]=subList
-    nLine=flatten(nLine)
-    nLine=stringify(nLine)
-    dlm=","
-    nLine=dlm.join(nLine)+"\n"
-    return nLine
+        @staticmethod
+        def config4Writing(pDict,cal):
+            if pDict==None: return None #If whole line couldn't be read (e.g. bad date stamp)
+            outList=cal.pDict2valLine(pDict)
+            nLine=stringify(outList)
+            dlm=","
+            nLine=dlm.join(nLine)+"\n"
+            return nLine
+
 
 def logPerformance(runInfo,lFiles,sFiles,runTime):
     #Records completion speed and other statistics

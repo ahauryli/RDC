@@ -27,6 +27,7 @@
 
         #_____TO DO____:
         #-Add compatibility with new RAMPs
+	#-Fix multiple 'no valid file' messages from single RAMP
 	#-Make RDCauto portable via class
 		#-Put global vars into a struct
 		#-Ensure appropriate packages are imported
