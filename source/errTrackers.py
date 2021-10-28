@@ -947,9 +947,10 @@ class adiTracker(valTracker):
     def __init__(self,runInfo,name,crit,const):
         super().__init__(runInfo,name,crit,const)
 
-class ppaTracker(valTracker):
+class ptrTracker(valTracker):
     def __init__(self,runInfo,name,crit,const):
         super().__init__(runInfo,name,crit,const)
+        self.device=name
         self.setupDisagErr()
         self.setupddt()
         self.badLines=0
@@ -961,7 +962,11 @@ class ppaTracker(valTracker):
         self.disagStamps=dict()
         self.lines2pushDisag=self.const["lines2pushDisag"]
         self.lines2stopDisag=self.const["lines2stopDisag"]
-        self.PMtags={"PM010","PM025","PM100"}
+        self.PMtags={
+                    self.device+"010",
+                    self.device+"025",
+                    self.device+"100"
+                    }
         for tag in self.PMtags:
             self.eFlags[tag]={"DISAG" : list()} #Set up error flag dictionary
             self.disagCounter[tag]=0 #Start the disagreement counter for each PM reading
@@ -990,6 +995,8 @@ class ppaTracker(valTracker):
         minDisag=self.const["minDisag"] #Cutoff for disagreement
         for tag in self.PMtags:
             (Atag,Btag)=(tag+"A",tag+"B")
+            if not(Atag in out and Btag in out): 
+                continue #i.e. no entries made for one of the channels, move on to next reading
             (A,B)=(out[Atag],out[Btag]) #Channel readings
             #(medA,medB)=(self.ddt[Atag].mVal,self.ddt[Btag].mVal) #Running medians for channels
             if (A!=None and B!=None): #If readings are defined
@@ -998,6 +1005,7 @@ class ppaTracker(valTracker):
                 if abs(A-B)>err: #If difference between channels exceeds error criterion
                     self.noDisagCounter[tag]=0 
                     self.disagCounter[tag]+=1
+                    #Decide whether disagreement is long-lasting enough. If so, add an error to the error flags quque
                     if self.disagCounter[tag]>self.lines2pushDisag: 
                         self.eFlags[tag]["DISAG"].append(time)
                     else: self.disagStamps[tag].append(time)
