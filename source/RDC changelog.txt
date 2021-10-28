@@ -29,7 +29,7 @@
 
         #_____TO DO____:
         #-Add compatibility with new RAMPs
-		#-Fix lack of METEO output on the old RAMPs
+		#-Fix lack of BATT output on the old RAMPs
 		#-Fix lack of PPA output on the old RAMPs
 		#-Add compatibility for strings of unknown or variable length
 	#-Make RDCauto portable via class

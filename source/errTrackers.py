@@ -225,7 +225,7 @@ class errorTracker(object):
                 ,"ADI":     adiTracker(runInfo,"ADI",bDict["ADI"],cDict["ADI"])
                 ,"PPA":     ptrTracker(runInfo,"PPA",bDict["PPA"],cDict["PPA"])
                 ,"PTR":     ptrTracker(runInfo,"PTR",bDict["PTR"],cDict["PTR"])
-                ,"PWR":     battTracker(runInfo,"PWR",bDict["PWR"],cDict["PWR"])
+                ,"BATT":    battTracker(runInfo,"BATT",bDict["BATT"],cDict["BATT"])
                 ,"WIND":    valTracker(runInfo,"WIND",bDict["WIND"],cDict["WIND"])
                 ,"GPS":     valTracker(runInfo,"GPS",bDict["GPS"],cDict["GPS"])
                 ,"STAT":    statTracker(runInfo,"STAT",bDict["STAT"],cDict["STAT"])
