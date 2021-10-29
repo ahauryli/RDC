@@ -25,6 +25,7 @@ import os
 import string
 import datetime
 import copy
+import pdb
 
 class config(object):
     def __init__(self,template,directory=None):
@@ -330,9 +331,9 @@ class config(object):
 
             @staticmethod
             def numFromPathElem(element):
-                #Get the ramp number from a string that is either s104 or 104
+                #Get the ramp number from a string that is e.g. s104, S104, or 104
                 num=None
-                if (element.startswith("s")):
+                if (element.startswith("s") or element.startswith("S")):
                     try: num=int(element[1:])
                     except: pass
                 else: 

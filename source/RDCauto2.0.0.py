@@ -298,7 +298,7 @@ class RAMP(object):
 
 #Parameters for file and RAMP workers
 class workParams(object):
-    def __init__(self,runInfo,raw,cal,chk,crit):
+    def __init__(self,runInfo,raw,cal,chk=None,crit=None):
             #Takes parameters necessary for worker operation and type of worker
             #Returns an object with the given parameters
             self.runInfo=runInfo
@@ -484,8 +484,12 @@ def organizeByFile(runInfo,files):
 
     out=[]
     for ramp in raw:
+#        pdb.set_trace()
         for i in range(len(raw[ramp])):
-            ap=workParams(runInfo,raw[ramp][i],cal[ramp][i],chk[ramp][i],crit)
+            if err:
+                ap=workParams(runInfo,raw[ramp][i],cal[ramp][i],chk[ramp][i],crit)
+            else:
+                ap=workParams(runInfo,raw[ramp][i],cal[ramp][i])
             out.append(ap) 
     return tuple(out)
 
@@ -616,8 +620,6 @@ class parse(object): #Collection of methods used to parse a line of data
             pDict=read.v8.options() #Map of parameter name to read method
             for key in pDict.keys(): #Check which element the parser is dealing with         
                 if elem.startswith(key):
-                    # if key=='PPA': 
-                    #     pdb.set_trace()
                     readings=pDict[key](elem) #Applies the appropriate reading function
                     if tracker: readings=tracker.push(key,readings) #Passes the values to a tracker
                     if readings: return (key,readings) #Returns readings if valid
@@ -727,7 +729,6 @@ class parse(object): #Collection of methods used to parse a line of data
     def config4Writing(pDict,cal):
         if pDict==None: return None #If whole line couldn't be read (e.g. bad date stamp)
         outList=cal.pDict2valLine(pDict)
-#        pdb.set_trace()
         nLine=stringify(outList)
         dlm=","
         nLine=dlm.join(nLine)+"\n"
@@ -923,42 +924,3 @@ def closerDate(dates,lastDate,tgt):
 if __name__ == '__main__':
     multiprocessing.freeze_support() #Enables conversion to executable
     init()
-
-##_________HERE BE THE DRAGONS (TEST CODE)_________##
-
-# def speedTest():
-#     path='E:/RAMPS/Test/New RAMPs'
-#     sTime=time.time()
-#     totalFiles=0
-#     for i in range(10):
-#         Rfolds=os.listdir(path)
-#         for d in Rfolds:
-#             subFolder=os.path.join(path,d)
-#             files=os.listdir(subFolder)
-#             totalFiles+=len(files)
-#             for file in files:
-#                 cPath=os.path.join(path,d,file)
-#                 io=open(cPath,'r')
-#                 line=io.readline()
-#                 while line!="":
-#                     isV8=parse.check.ifV8(line)
-#                     isV9=parse.check.ifV9(line)
-#                     line=io.readline()
-
-#     eTime=time.time()
-#     tTime=eTime-sTime
-#     print(totalFiles)
-#     print(tTime)
-#     print(tTime/totalFiles)
-
-# def dummyCal(dateStr):
-#     cal=Struct()
-#     cal.date=str2Date(dateStr)
-#     cal.param=config.importDict(TEMPLPATH)['Output']
-#     cal.catNameDict=dict()
-#     excludeSet={'Output File Name','Order'}
-#     for key in cal.param:
-#         if key not in excludeSet:
-#             for item in cal.param[key]:
-#                 cal.catNameDict[item]=key
-#     return cal
