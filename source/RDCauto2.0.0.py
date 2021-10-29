@@ -484,7 +484,6 @@ def organizeByFile(runInfo,files):
 
     out=[]
     for ramp in raw:
-#        pdb.set_trace()
         for i in range(len(raw[ramp])):
             if err:
                 ap=workParams(runInfo,raw[ramp][i],cal[ramp][i],chk[ramp][i],crit)
@@ -679,51 +678,110 @@ class parse(object): #Collection of methods used to parse a line of data
             #Parse the data string after the time stamp
             tempDict=dict()
             pDict=read.v9.options() #Get map of readable headers
-            eLenDict=read.v9.expectedLengths() #Get map of readable headers:expected number of outputs
             readableSet=pDict.keys()
             i=0 #Start immediately after the time stamp
             #Run thru line and attempt to parse out elements
             while i<(len(line)-1):
                 elem=line[i]
                 if elem in readableSet: #if header is known by the reader, attempt to parse
-                    #If header is in the map of expected lengths, reterieve that value:
-                    if elem in eLenDict: expLen=eLenDict[elem]
-                    else: #Otherwise, assume there is only one
-                        expLen=1
+                    expLen=parse.v9.getExpLen(elem,line,i)
 
                     expDatLst=line[i:i+expLen+1] #Isolate data thought to be pertinent to the header
-                    multiHeader=len(readableSet & set(expDatLst))>1 
-                    if multiHeader:#i.e. if more than one header in isolated list
+                    parsedMsg=parse.v9.element(elem,expDatLst,rParamDict,tempDict)
+                    if parsedMsg==None: #If could not be parsed, move on to the next element
                         i+=1
                         continue
-                    else:#Otherwise, try to parse
-                        #pass2Parser=','.join(expDatLst) #prepare string to be parsed
-                        readings=pDict[elem](expDatLst) #Get output
-                        if readings==None:
-                            #Continue to next parameter if could not be parsed
-                            i+=1
-                            continue
-                        #Use a random header for current element as determinant for category
-                        #(all headers in 'readings' should be in the same category)
-                        randHeader=next(iter(readings.keys())) #Random header from output
-                        catName=rParamDict[randHeader]
-                        if catName in tempDict:
-                            tempDict[catName].update(readings)
-                        else:
-                            tempDict[catName]=readings
-                        i+=expLen+1
-                else: i+=1
+                    else: i+=expLen+1 #Otherwise, update iterator
+                    # multiHeader=len(readableSet & set(expDatLst))>1 
+                    # if multiHeader:#i.e. if more than one header in isolated list
+                    #     i+=1 #Disregard for now
+                    #     continue
+                    # else:#Otherwise, try to parse
+                    #     #pass2Parser=','.join(expDatLst) #prepare string to be parsed
+                    #     readings=pDict[elem](expDatLst) #Get output
+                    #     if readings==None:
+                    #         #Continue to next parameter if could not be parsed
+                    #         i+=1
+                    #         continue
+                    #     #Use a random header for current element as determinant for category
+                    #     #(all headers in 'readings' should be in the same category)
+                    #     randHeader=next(iter(readings.keys())) #Random header from output
+                    #     catName=rParamDict[randHeader] #Category name of random header
+
+                    #     if catName in tempDict: tempDict[catName].update(readings)
+                    #     else: tempDict[catName]=readings
+
+                    #     i+=expLen+1
+                else: i+=1 #Update iterator if invalid header
             #Run all parsed readings through the tracker (so that all readings are there)
             if tracker:
                 for cat in tempDict:
-                    try:
-                        parsedDict[cat]=tracker.push(cat,tempDict[cat])
-                    except: 
-                        raise RuntimeError(cat,tempDict[cat])
+                    try: parsedDict[cat]=tracker.push(cat,tempDict[cat])
+                    except: raise RuntimeError(cat,tempDict[cat])
                 return parsedDict
-            else:
+            else: #if no trackers are present, update the tempDict with the datetime info from parsedDict & return
                 tempDict.update(parsedDict)
                 return tempDict
+
+        @staticmethod
+        def getExpLen(elem,line,index):
+            eLenDict=read.v9.expectedLengths() #Get map of readable headers:expected number of outputs
+            #Check if header is in the map of expected lengths, reterieve that value:
+            if elem in eLenDict: return eLenDict[elem]
+            else: #Otherwise try to get an expected length
+                eLen1set={ #Reading functions that only take one numeric value
+                    read.singleVal,
+                    read.echem.cal,
+                    read.timeStamp,
+                    read.v9.ptr
+                    }
+                #Check if single-value readings
+                if read.v9.options()[elem] in eLen1set: return 1 
+                else: #i.e. length of output string is undefined or variable
+                    return parse.v9.getVarLen(elem,line,index)
+
+        @staticmethod
+        def getVarLen(elem,line,index):
+            validHeaders=set(read.v9.options().keys()) #List of known headers
+            for i in range(index+1,len(line)): #Go thru line starting at 1 past the header index
+                elem=line[i]
+                if elem in validHeaders: return (i-index-1) #Return length until the next valid header
+            return len(line)-1 #Otherwise go until end of the line
+
+        @staticmethod
+        def element(elem,expDatLst,rParamDict,tempDict):
+            pDict=read.v9.options()
+            readableSet=pDict.keys()
+            multiHeader=len(readableSet & set(expDatLst))>1
+            if multiHeader:#i.e. if more than one header in isolated list
+                i=0
+                for header in multiHeader: #Go header by header
+                    endID=parse.v9.getVarLen(header,expDatLst,i)
+                    if endID>=len(expDatLst)-1: return None #Unable to disentangle multiple headers, return
+                    else:
+                        singleElemList=expDatLst[i:i+endID+1] #Isolate readings pertinent only to that header
+                        readings=parse.v9.singleElem(header,singleElemList,rParamDict,tempDict) #Parse the isolated readings
+                        i+=endID+1 #Update iterator
+                return "Parsed Multiheader" #Return message about successful parse
+            else: return parse.v9.singleElem(elem,expDatLst,rParamDict,tempDict)
+
+        @staticmethod
+        def singleElem(elem,expDatLst,rParamDict,tempDict):
+            #Attempt to read a single header of data and update tempDict
+            pDict=read.v9.options()
+            readings=pDict[elem](expDatLst) #Get output
+            if readings==None: return None
+            #Use a random header for current element as determinant for category
+            #(all headers in 'readings' should be in the same category)
+            randHeader=next(iter(readings.keys())) #Random header from output
+            catName=rParamDict[randHeader] #Category name of random header
+            
+            #Update tempDict if there were valid readings
+            if catName in tempDict: tempDict[catName].update(readings)
+            else: tempDict[catName]=readings
+
+            #Return readings to signal that the parse was successful
+            return "Parsed Single Value"
 
     @staticmethod
     def config4Writing(pDict,cal):

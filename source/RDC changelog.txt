@@ -27,10 +27,11 @@
 	#Fixed multiple 'no valid file' messages from single RAMP
 	#Fixed CAL values not being read in properly
 	#Fixed BATT & PPA data not being read in
+	#Added compatibility for variable-length lists of values for new RAMPs
+	#Added compatibility for v9 versions for firmware (9.13 and up)
 
         #_____TO DO____:
         #-Add compatibility with new RAMPs
-		#-Add compatibility for strings of unknown or variable length
 	#-Make RDCauto portable via class
 		#-Put global vars into a struct
 		#-Ensure appropriate packages are imported

@@ -1101,16 +1101,16 @@ class statTracker(valTracker):
         self.initializeFlags()
 
     def push(self,val,time,dt):
-        if val!=None:
-            if val=="XCON": 
-                self.addFlagEntry("AUXstat","XCON",time)
-                return None
-            self.vals["current"]=val
-            self.checkConn(time,dt)
-            #self.checkFlag(time,"recharge",0,{1 : "SIM DEPLETED"})
-            self.checkSD(time)
-            self.checkSignal(time)
-        return None
+        if val==None: return None #Short circuit if no values passed
+        if val=="XCON": 
+            self.addFlagEntry("AUXstat","XCON",time)
+            return None
+        self.vals["current"]=val
+        self.checkConn(time,dt)
+        #self.checkFlag(time,"recharge",0,{1 : "SIM DEPLETED"})
+        self.checkSD(time)
+        self.checkSignal(time)
+        return val
 
     def checkSD(self,time):
         sdFlag=self.vals["current"]["SD"]

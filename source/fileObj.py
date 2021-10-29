@@ -419,6 +419,7 @@ class calFile(dataFile):
 
     def pDict2valLine(self,pDict):
         if pDict==None: return None #If whole line couldn't be read (e.g. bad date stamp)
+        #pdb.set_trace()
         nLine=copy.copy(self.blankLine) #Create a new list of values to output
         for key in self.order: #Go thru categories in output order
             if (key in pDict) & (key in self.output['params']): #If the category is in the parsed dict & output  dict

@@ -44,17 +44,17 @@ class read(object):
             return opt
 
         # @staticmethod
-        # def ptr(s):
-        #     out={
-        #         "PTR010"    : (float,1,None),
-        #         "PTR010A"   : (float,2,None),
-        #         "PTR025"    : (float,3,None),
-        #         "PTR025A"   : (float,4,None),
-        #         "PTR100"    : (float,5,None),
-        #         "PTR100A"   : (float,6,None)
-        #         }
-        #     try: return read.vals(s,out,7)
-        #     except: return None
+            # def ptr(s):
+            #     out={
+            #         "PTR010"    : (float,1,None),
+            #         "PTR010A"   : (float,2,None),
+            #         "PTR025"    : (float,3,None),
+            #         "PTR025A"   : (float,4,None),
+            #         "PTR100"    : (float,5,None),
+            #         "PTR100A"   : (float,6,None)
+            #         }
+            #     try: return read.vals(s,out,7)
+            #     except: return None
 
         @staticmethod
         def stat(s):
@@ -417,10 +417,13 @@ class read(object):
                     'PM100A': None,
                     'PM100B': None
                     }
-            elemStr=elem #Store a copy of string for newLine
-            elem=elem.split(',')
+            inType=type(elem)
+            if inType==str:
+                elemStr=elem #Store a copy of string for newLine
+                elem=elem.split(',') #Comma-delimit
             if elem[0]=='PPA':
                 elem=elem[1:] #Removes the 'PPA'
+                if inType==list: elemStr=','.join(elem) #Copy not stored if input was a list
             nElemNewCln=13 #Max n(elements) in new RAMP-PPA firm, but old PPA firm
             nElemOld=4 #Max. number of elements in old string
             if len(elem)<=nElemOld:
