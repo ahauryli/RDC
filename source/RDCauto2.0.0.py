@@ -614,8 +614,10 @@ class parse(object): #Collection of methods used to parse a line of data
         def element(elem,tracker): #Determines which parsing function to use and applies it
             #Pushes the read values to a tracker and returns them if valid
             pDict=read.v8.options() #Map of parameter name to read method
-            for key in pDict.keys(): #Check which element the parser is dealing with
+            for key in pDict.keys(): #Check which element the parser is dealing with         
                 if elem.startswith(key):
+                    # if key=='PPA': 
+                    #     pdb.set_trace()
                     readings=pDict[key](elem) #Applies the appropriate reading function
                     if tracker: readings=tracker.push(key,readings) #Passes the values to a tracker
                     if readings: return (key,readings) #Returns readings if valid
@@ -725,6 +727,7 @@ class parse(object): #Collection of methods used to parse a line of data
     def config4Writing(pDict,cal):
         if pDict==None: return None #If whole line couldn't be read (e.g. bad date stamp)
         outList=cal.pDict2valLine(pDict)
+#        pdb.set_trace()
         nLine=stringify(outList)
         dlm=","
         nLine=dlm.join(nLine)+"\n"

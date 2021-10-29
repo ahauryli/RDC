@@ -99,7 +99,7 @@ class read(object):
                     }
                 try: 
                     outVals=read.vals(s,out,len(out)+1) #Try to parse batt line from regular ramps
-                    outVals["STAT"]=read.batt.stat(outVals["STAT"])
+                    outVals["STAT"]=read.v8.batt.stat(outVals["STAT"])
                     return outVals
                 except: 
                     try: #Try to parse batt line from prototype ramp
@@ -110,7 +110,7 @@ class read(object):
                         "RUN"  : (int,4,None), #System current
                         }
                         outVals=read.vals(s,out,len(out)+1) #Try to parse batt line from new ramp
-                        outVals["STAT"]=read.batt.stat(outVals["STAT"])
+                        outVals["STAT"]=read.v8.batt.stat(outVals["STAT"])
                         return outVals
                     except: return None
 
@@ -408,8 +408,8 @@ class read(object):
                     "T_PPA" : None,
                     "H_PPA" : None,
                     "P_PPA" : None,
-                    #"DP"   : None,
-                    #"Alt"  : None,
+                    "DP"   : None,
+                    "Alt"  : None,
                     'PM010A': None,
                     'PM010B': None,
                     'PM025A': None,
@@ -437,9 +437,9 @@ class read(object):
             lFormat={ #Order of parameters in new firmware line
                     "T_PPA" :   (int,1,None),
                     "H_PPA" :   (int,2,None),
-                    # "DP"    :   (float,3,None),
+                    "DP"    :   (float,3,None),
                     "P_PPA" :   (float,4,None),
-                    # "Alt" :   (float,5,None),
+                    "Alt"   :   (float,5,None),
                     "PM010A":   (float,6,None),
                     "PM025A":   (float,7,None),
                     "PM100A":   (float,8,None),
@@ -466,9 +466,9 @@ class read(object):
             lFormat={ #Order of parameters in new firmware line
                     "T_PPA" :   (int,1,None),
                     "H_PPA" :   (int,2,None),
-                    #"DP"   :   (float,3,None),
+                    "DP"   :   (float,3,None),
                     "P_PPA" :   (float,4,None),
-                    #"Alt"  :   (float,5,None),
+                    "Alt"  :   (float,5,None),
                     "PM010A":   (float,7,None),
                     "PM025A":   (float,9,None),
                     "PM100A":   (float,11,None),
@@ -547,8 +547,8 @@ class read(object):
                     "T_PPA" : 1,
                     "H_PPA" : 4,
                     "P"     : 9,
-                    #"DP"    : 13,
-                    #"Alt"   : 16,
+                    "DP"    : 13,
+                    "Alt"   : 16,
                     'PM010A': 2,
                     'PM010B': 2,
                     'PM025A': 5,
