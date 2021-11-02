@@ -31,13 +31,13 @@
 	#Added compatibility for variable-length lists of values for new RAMPs
 	#Added compatibility for v9 versions for firmware (9.13 and up)
 	#Removed all globarl variables
+	#Added Overwrite Files option
 
         #_____TO DO____:
         #-Display and log failure to read files
 	#-Make RDCauto portable via class
 		#-Ensure appropriate packages are imported
 		#-Roll everything into a single class
-	#-Overwrite files toggle?
 	#-Fix Performance file
 	#-Don't lose shit if no sensor mix entry
         #-Bug: crashes when no ECHEM output

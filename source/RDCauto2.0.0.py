@@ -16,44 +16,6 @@ from rawFileReader import read
 from errTrackers import *
 from genericHelpers import *
 
-#________Define folder and file names________#
-#Subfolders
-# SETTINGS="Settings"
-# TEMPLATES="templates"
-# CONSTANTS="Constants"
-# PERFORMANCE="Performance"
-# OUTPUT="Output"
-
-# #File names
-# VERSION="version.ini"
-# TEMPLATE="template.ini"
-# DEPENDENCIES="dependencies.ini"
-# RUNFILE="test2021-10-28.ini"
-# CRITERIA="bounds.ini"
-# CONST="const.ini"
-# ECHEM="SensorMix.csv"
-# PERF="Performance.csv"
-
-#____Construct Paths for external files____#
-# if getattr(sys,'frozen',False):
-#     #SCRIPTPATH=sys.executable
-#     #SCRIPTDIR=os.path.dirname(SCRIPTPATH)
-#     WORKDIR=SCRIPTDIR
-# else:
-#     SCRIPTPATH=os.path.abspath(__file__)
-#     SCRIPTDIR=os.path.dirname(SCRIPTPATH)
-#     WORKDIR=os.path.dirname(SCRIPTDIR)
-# if WORKDIR.endswith('MacOS'):
-#     WORKDIR=os.path.dirname(os.path.dirname(os.path.dirname(WORKDIR)))
-#VERSPATH=os.path.join(WORKDIR,VERSION)
-#TEMPLPATH=os.path.join(WORKDIR,SETTINGS,TEMPLATES,TEMPLATE)
-#DEPENDPATH=os.path.join(WORKDIR,SETTINGS,TEMPLATES,DEPENDENCIES)
-#RUNPATH=os.path.join(WORKDIR,SETTINGS,RUNFILE)
-#CRITPATH=os.path.join(WORKDIR,CONSTANTS,CRITERIA)
-#CONSTPATH=os.path.join(WORKDIR,CONSTANTS,CONST)
-#ECHEMPATH=os.path.join(WORKDIR,CONSTANTS,ECHEM)
-#PERFPATH=os.path.join(WORKDIR,PERFORMANCE,PERF)
-
 #________________CLASS DECLARATIONS______________________________#
 
 #Script Parameters:
@@ -423,7 +385,7 @@ class get(object): #Contains methods for retrieving information like paths, prog
         names.file.version="version.ini"
         names.file.template="template.ini"
         names.file.dependencies="dependencies.ini"
-        names.file.run="test2021-10-28.ini"
+        names.file.run="run.ini"
         names.file.bounds="bounds.ini"
         names.file.const="const.ini"
         names.file.echem="SensorMix.csv"
@@ -485,6 +447,10 @@ def addFile(files,readFile,runInfo):
     ramp=readFile.ramp
     date=readFile.date
     writeFile=calFile.create(readFile,runInfo)
+    #Check if the user wants to overwrite existing files
+    if os.path.exists(writeFile.path) and not runInfo.get("Overwrite Existing"):
+        if runInfo.get("Print Output"): print("Won't Overwrite %s" %writeFile) 
+        return #Exits function to prevent addition of files to queue
     if runInfo.get("Auto Checks"): chkFile=errorFile.create(readFile,runInfo)
     if ramp in files.raw:
         files.raw[ramp].append(readFile)
@@ -506,8 +472,9 @@ def process(runInfo,files):
         print("No useable RAMP files found. Please check that:\
         \n1. The raw directory address is correct\
         \n2. The raw directory is populated\
-        \n3. RAMP files in the raw directory are not corrupted\
-        \n4. RAMP files have useable timestamps (e.g. not 21/75/128 00:153:27)")
+        \n3. You have the 'Overwrite Files' option disabled if needed\
+        \n4. RAMP files in the raw directory are not corrupted\
+        \n5. RAMP files have useable timestamps (e.g. not 21/75/128 00:153:27)")
         return
 
     sFiles=sFiles/(1024**2) #Change size from bytes to Mb
