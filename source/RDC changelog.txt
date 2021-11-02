@@ -34,7 +34,7 @@
 	#Fixed STAT error tracker returning none
 	#Added compatibility for variable-length lists of values for new RAMPs
 	#Added compatibility for v9 versions for firmware (9.13 and up)
-	#Removed all globarl variables
+	#Removed all global variables
 	#Added Overwrite Files option
 
     #0.1.1 2018-8-31
