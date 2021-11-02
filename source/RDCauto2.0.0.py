@@ -16,55 +16,54 @@ from rawFileReader import read
 from errTrackers import *
 from genericHelpers import *
 
-NAME="RAMP Data Cleaner"
-
 #________Define folder and file names________#
 #Subfolders
-SETTINGS="Settings"
-TEMPLATES="templates"
-CONSTANTS="Constants"
-PERFORMANCE="Performance"
-OUTPUT="Output"
+# SETTINGS="Settings"
+# TEMPLATES="templates"
+# CONSTANTS="Constants"
+# PERFORMANCE="Performance"
+# OUTPUT="Output"
 
-#File names
-VERSION="version.ini"
-TEMPLATE="template.ini"
-DEPENDENCIES="dependencies.ini"
-RUNFILE="test2021-10-28.ini"
-CRITERIA="bounds.ini"
-CONST="const.ini"
-ECHEM="SensorMix.csv"
-PERF="Performance.csv"
+# #File names
+# VERSION="version.ini"
+# TEMPLATE="template.ini"
+# DEPENDENCIES="dependencies.ini"
+# RUNFILE="test2021-10-28.ini"
+# CRITERIA="bounds.ini"
+# CONST="const.ini"
+# ECHEM="SensorMix.csv"
+# PERF="Performance.csv"
 
 #____Construct Paths for external files____#
-if getattr(sys,'frozen',False):
-    SCRIPTPATH=sys.executable
-    SCRIPTDIR=os.path.dirname(SCRIPTPATH)
-    WORKDIR=SCRIPTDIR
-else:
-    SCRIPTPATH=os.path.abspath(__file__)
-    SCRIPTDIR=os.path.dirname(SCRIPTPATH)
-    WORKDIR=os.path.dirname(SCRIPTDIR)
-if WORKDIR.endswith('MacOS'):
-    WORKDIR=os.path.dirname(os.path.dirname(os.path.dirname(WORKDIR)))
-VERSPATH=os.path.join(WORKDIR,VERSION)
-TEMPLPATH=os.path.join(WORKDIR,SETTINGS,TEMPLATES,TEMPLATE)
-DEPENDPATH=os.path.join(WORKDIR,SETTINGS,TEMPLATES,DEPENDENCIES)
-RUNPATH=os.path.join(WORKDIR,SETTINGS,RUNFILE)
-CRITPATH=os.path.join(WORKDIR,CONSTANTS,CRITERIA)
-CONSTPATH=os.path.join(WORKDIR,CONSTANTS,CONST)
-ECHEMPATH=os.path.join(WORKDIR,CONSTANTS,ECHEM)
-PERFPATH=os.path.join(WORKDIR,PERFORMANCE,PERF)
+# if getattr(sys,'frozen',False):
+#     #SCRIPTPATH=sys.executable
+#     #SCRIPTDIR=os.path.dirname(SCRIPTPATH)
+#     WORKDIR=SCRIPTDIR
+# else:
+#     SCRIPTPATH=os.path.abspath(__file__)
+#     SCRIPTDIR=os.path.dirname(SCRIPTPATH)
+#     WORKDIR=os.path.dirname(SCRIPTDIR)
+# if WORKDIR.endswith('MacOS'):
+#     WORKDIR=os.path.dirname(os.path.dirname(os.path.dirname(WORKDIR)))
+#VERSPATH=os.path.join(WORKDIR,VERSION)
+#TEMPLPATH=os.path.join(WORKDIR,SETTINGS,TEMPLATES,TEMPLATE)
+#DEPENDPATH=os.path.join(WORKDIR,SETTINGS,TEMPLATES,DEPENDENCIES)
+#RUNPATH=os.path.join(WORKDIR,SETTINGS,RUNFILE)
+#CRITPATH=os.path.join(WORKDIR,CONSTANTS,CRITERIA)
+#CONSTPATH=os.path.join(WORKDIR,CONSTANTS,CONST)
+#ECHEMPATH=os.path.join(WORKDIR,CONSTANTS,ECHEM)
+#PERFPATH=os.path.join(WORKDIR,PERFORMANCE,PERF)
 
 #________________CLASS DECLARATIONS______________________________#
 
 #Script Parameters:
 class runParams(object):
 #Contains user inputs that determine how the program will run
-    def __init__(self):
+    def __init__(self,paths):
         print("Importing Template")
-        self.param=config.importDict(TEMPLPATH)
-        (self.runPath,self.echemPath)=self.setDefPaths() #Path to Defaults.csv,if it exists
+        self.paths=paths
+        self.param=config.importDict(paths.template)
+        self.checkPaths() #Ensure that files critical to program operation exist
         self.yesterday=datetime.date.today()-datetime.timedelta(days=1)
         self.rampDict=dict() #Maps RAMP number to RAMP object
         self.rParamDict=dict() #e.g. Raw Directory:Paths, Auto Checks:Toggles
@@ -98,16 +97,15 @@ class runParams(object):
             category=self.rParamDict[param]
             return self.param[category][param]
 
-    def setDefPaths(self):
-        #Imports from global variables the path to echem and runInfo files
-        #Catches if these files do not exist and crash the program
-        runPath=RUNPATH
-        echemPath=ECHEMPATH
-        if os.path.exists(runPath):
-            if os.path.exists(echemPath): return (runPath,echemPath)
-            else: 
-                raise FileNotFoundError('Sensor Mix file was not found. Check Path:\n%s' %echemPath)
-        else: raise FileNotFoundError('run info file was not found. Check Path:\n%s' %runPath)
+    def checkPaths(self):
+        #Checks if run and sensor mix files exist
+        #If they do not, raise exceptions as they are critical to program operation
+        if not os.path.exists(self.paths.run):
+            raise FileNotFoundError('Run info file was not found. Check Path:\n%s' 
+                                                                                %self.paths.run)
+        if not os.path.exists(self.paths.echem): 
+            raise FileNotFoundError('Sensor Mix file was not found. Check Path:\n%s' 
+                                                                                %self.paths.echem)
 
     def writeReverseDict(self):
         for key in self.param:
@@ -132,9 +130,9 @@ class runParams(object):
         print("\nLoading Parameters")
         self.loadEchem()
         #Separate loader that takes care of importing parameters and verifying them:
-        loader=config(self.param,WORKDIR)
-        dependencies=config.importDict(DEPENDPATH)
-        self.param=loader.load(self.runPath,check=True,dependencies=dependencies)
+        loader=config(self.param,self.paths.workDir)
+        dependencies=config.importDict(self.paths.dependencies)
+        self.param=loader.load(self.paths.run,check=True,dependencies=dependencies)
         if loader.noErrors(): 
             print("Parameters Loaded:")
             print(self)
@@ -146,7 +144,7 @@ class runParams(object):
 
     def loadEchem(self):
         #Loads in a dictionary mapping ramp number to echem sensor mix
-            echem=open(self.echemPath,'r')
+            echem=open(self.paths.echem,'r')
             line=echem.readline()
             while line!="":
                 line=removeChars(line,{"\n"})
@@ -181,7 +179,8 @@ class runParams(object):
         #and rampNo->"params"->dictionary of headers mapped to list of parameters
         if self.get("Output Format File"):
             #Load a format file if given
-            return runParams.loadFormatFile(self.get("Output File Name"),self.get("Ramp Nums"))
+            path2File=os.path.join(self.paths.outDir,self.get("Output File Name"))
+            return runParams.loadFormatFile(path2File,self.get("Ramp Nums"))
         else:
             #Otherwise, assign the same output to every RAMP
             outDict=dict()
@@ -190,12 +189,11 @@ class runParams(object):
             return outDict
 
     @staticmethod
-    def loadFormatFile(fileName,rampNums=None): 
+    def loadFormatFile(filePath,rampNums=None): 
         #Loads an output dictionary from a file
         restKwrd="rest" #String that specifies ramps not enumerated in the output file
         outDict=dict()
-        path2File=os.path.join(WORKDIR,OUTPUT,fileName) #Construct path to the output file
-        loadedDict=config.importDict(path2File) #dumbLoaded dictionary
+        loadedDict=config.importDict(filePath) #dumbLoaded dictionary
         if type(rampNums)==set:
             #Create a set of ramps that did not have an output mapped:
             notDoneSet=copy.copy(rampNums)
@@ -315,25 +313,123 @@ class workParams(object):
 class Struct(object): pass
 #_____________________SCRIPT MAIN AND MAIN HELPERS________________#
 
-def init():
-    (version,revision,status)=getVersion()
-    print("\n%s %s %s (%s) now running...."%(NAME,("v."+version),status,revision))
-    runInfo=runParams()
-    runInfo.loadParams()
+def init(runFile=None):
+    multiprocessing.freeze_support() #Enables conversion to executable
+
+    #Setup
+    (paths,names)=get.paths(runFile) #Retrive the necessary paths to various program files
+    (version,revision,status)=get.version(paths) #Retrieve Version Information
+    print("\n%s %s %s (%s) now running...."%(names.program,("v."+version),status,revision))
     files=Struct()
+
+    #Load program query
+    runInfo=runParams(paths)
+    runInfo.loadParams()
+    
+    #Start timer and list files
     sTime=time.time()
     listFiles(runInfo,files)
     eTime=time.time()
     print('File Search and Concatenation took:  %d seconds' %(eTime-sTime))
+
+    #Begin processing the query
     process(runInfo,files)
 
-def getVersion():
-    #Imports version information from version.txt file
-    versionFileDict=config.importDict(VERSPATH)
-    version=versionFileDict['Version']['RDCversion']
-    revision=versionFileDict['Version']['RDCrevision']
-    status=versionFileDict['Status']['RDCstatus']
-    return (version,revision,status)
+class get(object): #Contains methods for retrieving information like paths, program name, etc.
+
+    @staticmethod
+    def version(paths):
+        #Imports version information from version.txt file
+        versionFileDict=config.importDict(paths.version)
+        version=versionFileDict['Version']['RDCversion']
+        revision=versionFileDict['Version']['RDCrevision']
+        status=versionFileDict['Status']['RDCstatus']
+        return (version,revision,status)
+
+    @staticmethod
+    def paths(runFile):
+        paths=Struct() #Define the paths structure 
+
+        names=get.names()
+
+        #____Construct Paths for external files____#
+        if getattr(sys,'frozen',False):
+            scriptPath=sys.executable
+            scriptDir=os.path.dirname(scriptPath)
+            workDir=scriptDir
+        else:
+            scriptPath=os.path.abspath(__file__)
+            scriptDir=os.path.dirname(scriptPath)
+            workDir=os.path.dirname(scriptDir)
+        if workDir.endswith('MacOS'):
+            workDir=os.path.dirname(os.path.dirname(os.path.dirname(workDir)))
+
+        #Construct path to run file, check if valid
+        if runFile==None: paths.run=os.path.join(workDir,names.folder.settings,names.file.run) #i.e. default runFile
+        elif type(runFile)==str:
+            paths.run=os.path.join(workDir,names.folder.settings,runFile)
+            if not os.path.exists(paths.run):
+                raise FileNotFoundError("Couldn't locate %s" %paths.run)
+        else:
+            raise TypeError('''Invalid Type Given for run file: %s.
+                Expected str or NoneType''' %type(runFile))
+
+        #Construct paths to files
+        paths.version=os.path.join( workDir,
+                                    names.file.version)
+        paths.template=os.path.join(workDir,
+                                    names.folder.settings,
+                                    names.folder.templates,
+                                    names.file.template)
+        paths.dependencies=os.path.join(workDir,
+                                        names.folder.settings,
+                                        names.folder.templates,
+                                        names.file.dependencies)
+        paths.bounds=os.path.join(  workDir,
+                                    names.folder.constants,
+                                    names.file.bounds)
+        paths.constants=os.path.join(   workDir,
+                                        names.folder.constants,
+                                        names.file.const)
+        paths.echem=os.path.join(   workDir,
+                                    names.folder.constants,
+                                    names.file.echem)
+        paths.performance=os.path.join( workDir,
+                                        names.folder.performance,
+                                        names.file.performance)
+        #Construct paths to directories
+        paths.workDir=workDir
+        paths.outDir=os.path.join(workDir,names.folder.output)
+
+        return (paths,names)
+
+    @staticmethod
+    def names(): #Define names of folder and files necessary for the script
+        names=Struct() #Struct to hold output information
+        names.folder=Struct()
+        names.file=Struct()
+
+        #Name of the program
+        names.program="RAMP Data Cleaner"
+
+        #Folder names
+        names.folder.settings="Settings"
+        names.folder.templates="templates"
+        names.folder.constants="Constants"
+        names.folder.performance="Performance"
+        names.folder.output="Output"
+
+        #File names
+        names.file.version="version.ini"
+        names.file.template="template.ini"
+        names.file.dependencies="dependencies.ini"
+        names.file.run="test2021-10-28.ini"
+        names.file.bounds="bounds.ini"
+        names.file.const="const.ini"
+        names.file.echem="SensorMix.csv"
+        names.file.performance="Performance.csv"
+
+        return names
 
 ##________________Searching for files__________________________##
 def listFiles(runInfo,files):
@@ -479,7 +575,7 @@ def organizeByFile(runInfo,files):
     if err: chk=files.err
     else: chk=None
 
-    if err or rm: crit=critLoader(CRITPATH,CONSTPATH)
+    if err or rm: crit=critLoader(runInfo.paths.bounds,runInfo.paths.constants)
     else: crit=None
 
     out=[]
@@ -795,7 +891,7 @@ class parse(object): #Collection of methods used to parse a line of data
 def logPerformance(runInfo,lFiles,sFiles,runTime):
     #Records completion speed and other statistics
     speed=4e9 #Processor clock speed
-    perfPath=PERFPATH #Full path to performance file
+    perfPath=runInfo.paths.performance #Full path to performance file
     performance=open(perfPath,'a+')
     #Format: nFiles,Size,Checks,R/F,Print,nProc,Time,FPS,FPS/core,pCycles,Throughput,pCycles/file
     if runInfo.get("Auto Checks") or runInfo.get("Auto Remove"): checks="Y"
@@ -980,5 +1076,4 @@ def closerDate(dates,lastDate,tgt):
     if abs(diffD1)<=abs(diffLd1) and (diffD1>=zdt or diffD2<zdt): return True
 
 if __name__ == '__main__':
-    multiprocessing.freeze_support() #Enables conversion to executable
     init()
