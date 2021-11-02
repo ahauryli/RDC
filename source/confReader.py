@@ -1067,7 +1067,7 @@ class config(object):
         @staticmethod
         def date2MixedList(dateList):
             #Compresses a date list into a mixed list 
-            keywords={"daily","today","all"}
+            keywords={"daily","today","yesterday","all"}
             try:
                 if dateList in keywords: return dateList
             except: pass

@@ -1,7 +1,11 @@
-#TO BE IMPLEMENTED:
+#NOT IMPLEMENTED:
         #-Copy printed output to a debug file
+		#-e.g. display and log failure to read files
         #-Menu for tracker selection (separate window?)
         #-Estimated time to completion    #Needs more datar
+	#-Make RDCauto fully portable via class
+	#-Parallelize file searching
+	#-Give the program the ability to deal with RAMPs with no SensorMix.csv entries
 
     #2.0.0
         #rawFileReader updated for compatibility with new PPA firmware
@@ -32,22 +36,6 @@
 	#Added compatibility for v9 versions for firmware (9.13 and up)
 	#Removed all globarl variables
 	#Added Overwrite Files option
-
-        #_____TO DO____:
-        #-Display and log failure to read files
-	#-Make RDCauto portable via class
-		#-Ensure appropriate packages are imported
-		#-Roll everything into a single class
-	#-Fix Performance file
-	#-Don't lose shit if no sensor mix entry
-        #-Bug: crashes when no ECHEM output
-        #-Fix bug that causes crash when auto checks are disabled
-        #-Processor speed input when Log Performance is turned on?
-        #-Disable unnecessary trackers for Auto Remove
-        #-Improve prediction of expected data yield?
-        #-Parallellize file searching
-        #-Revise bounds.ini file
-        #-Change multiprocessing from pool to queue?
 
     #0.1.1 2018-8-31
         #BCM information can now be parsed in
