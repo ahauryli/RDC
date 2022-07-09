@@ -1,0 +1,26 @@
+missing module named 'multiprocessing.forking' - imported by c:\users\ramps\appdata\local\programs\python\python36\lib\site-packages\PyInstaller\loader\rthooks\pyi_rth_multiprocessing.py
+missing module named multiprocessing.get_context - imported by multiprocessing, multiprocessing.pool, multiprocessing.managers, multiprocessing.sharedctypes
+missing module named multiprocessing.TimeoutError - imported by multiprocessing, multiprocessing.pool
+missing module named multiprocessing.BufferTooShort - imported by multiprocessing, multiprocessing.connection
+missing module named multiprocessing.AuthenticationError - imported by multiprocessing, multiprocessing.connection
+missing module named multiprocessing.set_start_method - imported by multiprocessing, multiprocessing.spawn
+missing module named multiprocessing.get_start_method - imported by multiprocessing, multiprocessing.spawn
+missing module named resource - imported by posix, E:\RAMPS\Processing Code\Repositories\RDC2.0.0\source\RDCauto2.0.1.py
+missing module named posix - imported by os, E:\RAMPS\Processing Code\Repositories\RDC2.0.0\source\RDCauto2.0.1.py
+missing module named _posixsubprocess - imported by subprocess, multiprocessing.util, E:\RAMPS\Processing Code\Repositories\RDC2.0.0\source\RDCauto2.0.1.py
+missing module named org - imported by pickle, E:\RAMPS\Processing Code\Repositories\RDC2.0.0\source\RDCauto2.0.1.py
+missing module named readline - imported by cmd, code, pdb, E:\RAMPS\Processing Code\Repositories\RDC2.0.0\source\RDCauto2.0.1.py
+excluded module named _frozen_importlib - imported by importlib, importlib.abc, E:\RAMPS\Processing Code\Repositories\RDC2.0.0\source\RDCauto2.0.1.py
+missing module named _frozen_importlib_external - imported by importlib._bootstrap, importlib, importlib.abc, E:\RAMPS\Processing Code\Repositories\RDC2.0.0\source\RDCauto2.0.1.py
+missing module named _winreg - imported by platform, E:\RAMPS\Processing Code\Repositories\RDC2.0.0\source\RDCauto2.0.1.py
+missing module named _scproxy - imported by urllib.request
+missing module named java - imported by platform, E:\RAMPS\Processing Code\Repositories\RDC2.0.0\source\RDCauto2.0.1.py
+missing module named 'java.lang' - imported by platform, E:\RAMPS\Processing Code\Repositories\RDC2.0.0\source\RDCauto2.0.1.py, xml.sax._exceptions
+missing module named vms_lib - imported by platform, E:\RAMPS\Processing Code\Repositories\RDC2.0.0\source\RDCauto2.0.1.py
+missing module named termios - imported by tty, E:\RAMPS\Processing Code\Repositories\RDC2.0.0\source\RDCauto2.0.1.py, getpass
+missing module named grp - imported by shutil, tarfile, E:\RAMPS\Processing Code\Repositories\RDC2.0.0\source\RDCauto2.0.1.py
+missing module named 'org.python' - imported by copy, E:\RAMPS\Processing Code\Repositories\RDC2.0.0\source\RDCauto2.0.1.py, xml.sax
+missing module named pwd - imported by posixpath, shutil, tarfile, http.server, webbrowser, E:\RAMPS\Processing Code\Repositories\RDC2.0.0\source\RDCauto2.0.1.py, netrc, getpass
+missing module named _dummy_threading - imported by dummy_threading, E:\RAMPS\Processing Code\Repositories\RDC2.0.0\source\RDCauto2.0.1.py
+missing module named multiprocessing.cpu_count - imported by multiprocessing, E:\RAMPS\Processing Code\Repositories\RDC2.0.0\source\RDCauto2.0.1.py, confReader
+missing module named multiprocessing.Pool - imported by multiprocessing, E:\RAMPS\Processing Code\Repositories\RDC2.0.0\source\RDCauto2.0.1.py

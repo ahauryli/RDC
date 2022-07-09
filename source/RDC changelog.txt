@@ -7,6 +7,10 @@
 	#-Parallelize file searching
 	#-Give the program the ability to deal with RAMPs with no SensorMix.csv entries
 
+    #2.0.1 2022-07-08
+	#Fixed bug that occurred when attempting to analyze substrings of irregular length
+		#This version will not attempt to disentangle multiple headers
+
     #2.0.0
         #rawFileReader updated for compatibility with new PPA firmware
         #Script can now output POSIXTIME as well as DATETIME
